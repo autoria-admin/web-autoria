@@ -8,10 +8,11 @@ if (!getenv('AUTORIA_PRIVADO')) putenv('AUTORIA_PRIVADO=' . dirname($root) . '/W
 
 $uri = rawurldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $rutas = [
-  '#^/api/(asistente|lector-perfil|diagnostico|contacto)/?$#' => '/php/$1.php',
+  '#^/api/(asistente|lector-perfil|diagnostico|contacto|propuesta)/?$#' => '/php/$1.php',
   '#^/panel/?$#' => '/php/panel.php',
   '#^/instalar/?$#' => '/php/instalar.php',
 ];
+if (preg_match('#^/charla/propuesta/?$#', $uri)) { header('Content-Type: text/html; charset=utf-8'); readfile($root . '/charla-propuesta.html'); return true; }
 foreach ($rutas as $re => $destino) {
   if (preg_match($re, $uri)) { require $root . preg_replace($re, $destino, $uri); return true; }
 }
