@@ -221,6 +221,39 @@ function read_records() {
   return array_reverse($out);   // los más recientes primero
 }
 
+// ¿Ya se guardó un registro con este id? (evita duplicados y avisos repetidos en los reintentos)
+function registro_existe($id) {
+  $f = dir_privado() . '/contactos.jsonl';
+  if ($id === '' || !is_file($f)) return false;
+  return strpos((string) file_get_contents($f), '"id":' . json_encode($id)) !== false;
+}
+
+/* ---------- visitas de las charlas ----------
+   Contador anónimo por código de charla y página: no guarda IP, cookies ni
+   nada que identifique a la persona. Archivo: autoria-privado/visitas.json */
+function contar_visita($charla, $pagina) {
+  $dir = dir_privado();
+  if ($dir === '') return false;
+  $fp = @fopen($dir . '/visitas.json', 'c+');
+  if (!$fp) return false;
+  flock($fp, LOCK_EX);
+  $d = json_decode((string) stream_get_contents($fp), true);
+  if (!is_array($d)) $d = [];
+  $d[$charla][$pagina] = (int) ($d[$charla][$pagina] ?? 0) + 1;
+  if (empty($d[$charla]['primera'])) $d[$charla]['primera'] = ahora();
+  $d[$charla]['ultima'] = ahora();
+  ftruncate($fp, 0); rewind($fp);
+  fwrite($fp, json_encode($d, JSON_UNESCAPED_UNICODE));
+  fflush($fp); flock($fp, LOCK_UN); fclose($fp);
+  return true;
+}
+function leer_visitas() {
+  $f = dir_privado() . '/visitas.json';
+  $d = is_file($f) ? json_decode((string) @file_get_contents($f), true) : [];
+  return is_array($d) ? $d : [];
+}
+function codigo_charla($v) { return strtoupper(preg_replace('/[^A-Za-z0-9_-]/', '', clean_str($v, 20))); }
+
 // Aviso por email al equipo (opcional: solo si se configuró un email en la instalación).
 function notify_team($asunto, array $row) {
   $to = config()['aviso_email'] ?? '';

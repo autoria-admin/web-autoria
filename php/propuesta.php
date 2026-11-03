@@ -19,7 +19,7 @@ if ($limit !== null) json_out(['ok' => false, 'reason' => 'rate_' . $limit]);
 
 // El id lo pone el móvil, para que un reintento no cuente dos veces en el panel.
 $id = preg_replace('/[^a-zA-Z0-9-]/', '', clean_str($in['id'] ?? '', 40));
-$charla = strtoupper(preg_replace('/[^A-Za-z0-9_-]/', '', clean_str($in['charla'] ?? '', 20)));
+$charla = codigo_charla($in['charla'] ?? '');
 
 // Fecha en que pulsó «Listo» (puede llegar más tarde si no había conexión).
 $fecha = ahora();
