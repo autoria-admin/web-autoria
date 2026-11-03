@@ -56,6 +56,21 @@ function guardar_config(array $nueva) {
 }
 
 /* ---------- respuestas ---------- */
+// Responde ya al navegador y sigue trabajando (para enviar el aviso por email sin hacer esperar).
+function json_out_y_seguir($arr) {
+  ignore_user_abort(true);
+  $body = json_encode($arr, JSON_UNESCAPED_UNICODE);
+  header('Content-Type: application/json; charset=utf-8');
+  header('X-Content-Type-Options: nosniff');
+  header('Cache-Control: no-store');
+  header('Content-Length: ' . strlen($body));
+  header('Connection: close');
+  echo $body;
+  if (function_exists('litespeed_finish_request')) litespeed_finish_request();
+  elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+  else { @ob_flush(); flush(); }
+}
+
 function json_out($arr, $code = 200) {
   http_response_code($code);
   header('Content-Type: application/json; charset=utf-8');
@@ -255,15 +270,51 @@ function leer_visitas() {
 function codigo_charla($v) { return strtoupper(preg_replace('/[^A-Za-z0-9_-]/', '', clean_str($v, 20))); }
 
 // Aviso por email al equipo (opcional: solo si se configuró un email en la instalación).
+// Si en el panel se guardó una contraseña de aplicación de Gmail, se envía por
+// el SMTP de Gmail: el dominio temporal de Hostinger no puede enviar correo propio
+// (su SPF es «-all») y Gmail descarta esos mensajes sin avisar.
 function notify_team($asunto, array $row) {
   $to = config()['aviso_email'] ?? '';
-  if (!$to || !filter_var($to, FILTER_VALIDATE_EMAIL) || !function_exists('mail')) return false;
+  if (!$to || !filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
   $texto = '';
   foreach ($row as $k => $v) {
     if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     $texto .= str_pad($k, 16) . ': ' . ($v === null || $v === '' ? '—' : $v) . "\n";
   }
+  $cfg = config();
+  if (!empty($cfg['smtp_user']) && !empty($cfg['smtp_pass'])) return smtp_gmail($cfg['smtp_user'], $cfg['smtp_pass'], $to, $asunto, $texto) === '';
+  if (!function_exists('mail')) return false;
   $host = preg_replace('/[^a-z0-9.\-]/i', '', preg_replace('/^www\./', '', $_SERVER['HTTP_HOST'] ?? 'autoria'));
   $cab = 'From: Autoria <no-reply@' . $host . ">\r\nContent-Type: text/plain; charset=utf-8";
   return @mail($to, '=?UTF-8?B?' . base64_encode($asunto) . '?=', $texto, $cab);
+}
+
+// Envío mínimo por el SMTP de Gmail (SSL, puerto 465) con una contraseña de aplicación.
+// Devuelve '' si se envió o un texto corto con el motivo del fallo.
+function smtp_gmail($user, $pass, $to, $asunto, $texto, $servidor = 'ssl://smtp.gmail.com:465') {
+  $fp = @stream_socket_client($servidor, $errno, $errstr, 10);
+  if (!$fp) return 'sin conexión con smtp.gmail.com (' . $errstr . ')';
+  stream_set_timeout($fp, 10);
+  $leer = function () use ($fp) {
+    $r = '';
+    while (($l = fgets($fp, 515)) !== false) { $r .= $l; if (strlen($l) < 4 || $l[3] === ' ') break; }
+    return $r;
+  };
+  $paso = function ($cmd, $espera) use ($fp, $leer) {
+    if ($cmd !== null) fwrite($fp, $cmd . "\r\n");
+    $r = $leer();
+    return substr($r, 0, 3) === $espera ? '' : trim($r);
+  };
+  $cuerpo = preg_replace('/^\./m', '..', str_replace("\n", "\r\n", $texto));
+  $msg = 'From: Autoria <' . $user . ">\r\n" . 'To: <' . $to . ">\r\n"
+    . 'Subject: =?UTF-8?B?' . base64_encode($asunto) . "?=\r\n" . 'Date: ' . date('r') . "\r\n"
+    . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" . $cuerpo . "\r\n.";
+  $pasos = [[null, '220'], ['EHLO autoria', '250'], ['AUTH LOGIN', '334'], [base64_encode($user), '334'], [base64_encode($pass), '235'],
+            ['MAIL FROM:<' . $user . '>', '250'], ['RCPT TO:<' . $to . '>', '250'], ['DATA', '354'], [$msg, '250']];
+  foreach ($pasos as $i => [$cmd, $espera]) {
+    $err = $paso($cmd, $espera);
+    if ($err !== '') { @fwrite($fp, "QUIT\r\n"); fclose($fp); return ($i === 4 ? 'Gmail no acepta la contraseña de aplicación: ' : '') . $err; }
+  }
+  fwrite($fp, "QUIT\r\n"); fclose($fp);
+  return '';
 }

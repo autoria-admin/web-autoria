@@ -34,6 +34,6 @@ $row = [
   'red' => $red, 'perfil' => $perfil, 'propuesta' => clean_str($in['propuesta'] ?? '', 400),
   'consentimiento' => 'Sí (' . $fecha . '): usar estos datos para enviarle el diagnóstico y contactarle',
 ];
-$guardado = store_record($row);
-$avisado = notify_team('Diagnóstico de charla — ' . ($row['charla'] ?: 'sin código') . ' — ' . $email, $row);
-json_out(['ok' => $guardado || $avisado]);
+$asunto = 'Diagnóstico de charla — ' . ($row['charla'] ?: 'sin código') . ' — ' . $email;
+if (store_record($row)) { json_out_y_seguir(['ok' => true]); notify_team($asunto, $row); exit; }
+json_out(['ok' => notify_team($asunto, $row)]);   // si no se pudo guardar, al menos llega el aviso

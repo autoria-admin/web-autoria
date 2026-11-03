@@ -73,7 +73,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Después la página se bloquea. Para cambiar algo, se borra ese `config.php` desde el Administrador de archivos y se vuelve a `/instalar`.
 - **Contactos y diagnósticos:** van a `autoria-privado/contactos.jsonl`.
   - Se ven en `/panel`, con contraseña, y se descargan como CSV para Excel (punto y coma y BOM UTF-8).
-  - Los avisos por email se envían con `mail()`.
+  - Los avisos por email van a la dirección de `/instalar`. Se envían por el SMTP de Gmail con una contraseña de aplicación que se guarda desde `/panel?vista=avisos` (`smtp_user` y `smtp_pass` en `config.php`). Sin ella se usa `mail()`, pero el dominio temporal tiene SPF `-all` y Gmail descarta esos correos.
 - **Gemini:** la clave es de **pago**, con la facturación activada, porque los usuarios están en el EEE.
   - Los modelos se prueban en orden, con alternativa si uno falla (`MODELOS_CHAT` y `MODELOS_LECTURA` en `_comun.php`).
   - Se pide `thinkingLevel: minimal`; si el modelo no lo admite, se repite sin ese ajuste.
