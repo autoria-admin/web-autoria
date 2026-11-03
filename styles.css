@@ -1280,3 +1280,10 @@ body::before {
 [data-paso="final"] .ch-edit { display: block; margin: 1rem auto 0; }
 [data-paso="final"] .ch-edit[hidden] { display: none; }
 .ch-btn[hidden] { display: none; }
+.ch-ultimo { margin-top: .4rem; padding: 1.4rem 1.2rem 1.2rem; border: 1px solid var(--ink); border-radius: var(--radius); background: rgba(255,255,255,.5); }
+.ch-ultimo[hidden] { display: none; }
+.ch-paso { display: inline-block; padding: .3em .6em; background: var(--ink); color: var(--paper); border-radius: 2px; }
+.ch-ultimo-titulo { margin: .9rem 0 1.2rem; font-family: var(--serif); font-weight: 360; font-size: clamp(1.7rem, 1.3rem + 2vw, 2.3rem); line-height: 1.1; letter-spacing: -0.02em; }
+.ch-ultimo-titulo em { font-weight: 300; }
+.ch-btn-wa { min-height: 64px; padding-inline: 1rem; font-size: 1.05rem; white-space: normal; text-align: center; }
+.ch-ultimo-nota { margin-top: .7rem; text-align: center; }

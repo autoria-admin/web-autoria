@@ -40,7 +40,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **`charla-diagnostico.html` + `lib/charla-diagnostico.js`** — cierre de las charlas, en `/charla/diagnostico?c=C01`.
   - Correo (obligatorio), nombre (opcional), red principal (LinkedIn, Instagram o TikTok), enlace o usuario del perfil y casilla de consentimiento. Muestra «Su frase» si `autoria_propuesta` está en el móvil; si no, un campo opcional para pegarla.
   - Guarda en `/api/charla-diagnostico` (`php/charla-diagnostico.php`) y avisa al equipo por email de cada envío. El id lo pone el móvil, así que los reintentos y los dobles clics no duplican ni el registro ni el aviso.
-  - Sin conexión: «Casi listo» y cola en `autoria_diagnostico_cola`; «Listo» y el botón de la comunidad de WhatsApp solo cuando el envío llega.
+  - Sin conexión: «Casi listo» y cola en `autoria_diagnostico_cola`; «Listo» y el recuadro «Último paso» con el botón de la comunidad de WhatsApp solo cuando el envío llega. Unirse **no es obligatorio** (decisión del 03/11/2026: se envía primero el correo y la comunidad es el último paso destacado). Los clics en el botón se cuentan por charla.
 - **Medición de las charlas:** `/api/visita` (`php/visita.php`) cuenta una visita por móvil, página y código, sin cookies ni IP, en `autoria-privado/visitas.json`. El panel (`/panel?vista=charlas`) muestra visitas, propuestas y diagnósticos pedidos por código, y el CSV de las solicitudes.
 - **`main.js`** — efectos y comportamiento de la portada:
   - anotaciones a mano (`data-mark` circle, underline, strike o tick), que el JS reescala al tamaño real;
