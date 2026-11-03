@@ -4,6 +4,7 @@
    1. Tipografías  2. Tokens  3. Reset  4. Utilidades
    5. Componentes  6. Secciones  7. Asistente  8. Diagnóstico
    9. Páginas legales  10. Efectos  11. Movimiento reducido  12. Impresión
+   13. Dinámica de las charlas
    ============================================================= */
 
 /* =============================================================
@@ -1190,3 +1191,59 @@ body::before {
   .dg-step.is-active { display: block !important; animation: none; }
   .js .anno path { stroke-dashoffset: 0 !important; }
 }
+
+/* =============================================================
+   13. Dinámica de las charlas (charla-propuesta.html)
+   Pensada para el móvil: una columna, campos y botones grandes.
+   ============================================================= */
+.page-charla { min-height: 100vh; min-height: 100dvh; }
+.ch-top {
+  display: flex; align-items: center; height: 56px;
+  padding-inline: var(--gutter); border-bottom: 1px solid var(--line);
+}
+.ch-top .wordmark { font-size: 1.25rem; }
+.ch { width: min(100% - 2 * var(--gutter), 34rem); margin-inline: auto; padding: clamp(1.6rem, 6vw, 3.2rem) 0 3rem; }
+.ch-title {
+  font-family: var(--serif); font-weight: 360; font-optical-sizing: auto;
+  font-size: clamp(2.4rem, 1.7rem + 3vw, 3.4rem); line-height: 1; letter-spacing: -0.028em;
+  margin-bottom: 1.7rem;
+}
+.ch-title em { font-weight: 300; letter-spacing: -0.03em; }
+.ch-title .anno path { stroke-width: 3px; animation: chDraw .9s var(--ease-in-out) .35s both; }
+.ch-title .anno path + path { animation-delay: 1.05s; animation-duration: .5s; }
+@keyframes chDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+.ch-form { display: grid; gap: 1.1rem; }
+.page-charla .field label, .page-charla .kicker { letter-spacing: .14em; }
+.ch-form .field input { min-height: 54px; font-size: 1.06rem; }
+.ch-form .field input::placeholder { color: #75736C; font-style: italic; opacity: 1; }
+
+.ch-preview {
+  margin-top: .3rem; padding: 1rem 1.1rem;
+  background: var(--paper-2); border-left: 2px solid var(--ink); border-radius: 0 var(--radius) var(--radius) 0;
+  font-family: var(--serif); font-size: 1.32rem; line-height: 1.35; color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+.ch-fill { color: var(--ink); font-style: italic; }
+.ch-gap { display: inline-block; min-width: 2.6em; border-bottom: 1px solid var(--line-2); line-height: 1; }
+.ch-note { font-family: var(--serif); font-style: italic; font-size: 1.08rem; color: var(--ink-mute); }
+.ch-error { font-size: .95rem; font-weight: 600; color: var(--accent-ink); }
+.ch-btn { width: 100%; min-height: 56px; font-size: 1.05rem; }
+
+.ch-kicker { color: var(--ink); }
+.ch-frase {
+  margin: 1.1rem 0 2.2rem;
+  font-family: var(--serif); font-weight: 380; font-optical-sizing: auto;
+  font-size: clamp(2rem, 1.45rem + 2.8vw, 3rem); line-height: 1.16; letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.ch-frase:focus { outline: none; }
+.ch-actions { display: grid; gap: .5rem; justify-items: center; }
+.ch-edit {
+  min-height: 44px; padding: 0 .6rem;
+  font-size: .95rem; font-weight: 500; color: var(--ink-soft);
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.ch-status { margin-top: 1.4rem; font-size: .92rem; color: var(--ink-mute); text-align: center; }
+.ch-status[data-tipo="pendiente"] { color: var(--ink-soft); }
+@media (prefers-reduced-motion: reduce) { .ch-title .anno path { animation: none; } }

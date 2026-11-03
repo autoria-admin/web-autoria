@@ -32,6 +32,11 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Pasos: perfil, objetivo, público, frecuencia, tiempo y cámara, calculadora, email y consentimiento, informe.
   - Perfil: capturas de cualquier red o PDF de LinkedIn, leídos con IA. Lo que no aparece se deja en blanco.
   - Informe: puntos fuertes y débiles, bio o titular propuesto, «Dónde centrarte» (1–2 redes), tres ideas de vídeo, ritmo recomendado y llamada.
+- **`charla-propuesta.html` + `lib/charla.js`** — dinámica de las charlas, en `/charla/propuesta?c=C01` (código de la charla).
+  - No sale en el menú y lleva `noindex`. Trato de usted.
+  - Tres campos (para, aporto, gracias a), la frase en vivo, «Listo» y la frase en grande para leerla en voz alta.
+  - Guarda anónimo en `/api/propuesta` (`php/propuesta.php`): sin nombre ni correo y sin aviso por email. Se ve en `/panel?vista=propuestas`, filtrable por código y con CSV.
+  - La frase queda en `localStorage` con la clave `autoria_propuesta` (JSON con `frase`, `para`, `aporto`, `gracias_a`, `charla` y `fecha`) para que la recupere el diagnóstico. Sin conexión, los envíos esperan en `autoria_propuesta_cola` y se reintentan solos.
 - **`main.js`** — efectos y comportamiento de la portada:
   - anotaciones a mano (`data-mark` circle, underline, strike o tick), que el JS reescala al tamaño real;
   - textos que aparecen al hacer scroll (`data-split`, `data-reveal`);
@@ -44,9 +49,9 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Páginas legales:** `privacidad.html`, `aviso-legal.html` y `creditos.html`.
 - **`php/`** — la parte de servidor en Hostinger:
   - `_comun.php`: utilidades, Gemini, límites de uso y guardado;
-  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `panel.php` e `instalar.php`.
+  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `panel.php` e `instalar.php`.
 - **`.htaccess`:**
-  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto)`, `/panel` y `/instalar` en los archivos `php/*.php`;
+  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/propuesta` en `charla-propuesta.html`;
   - bloquea `php/`, `api/`, `tools/`, `.git`, los archivos que empiezan por punto, `*.md` y los `*.json` de configuración.
 - **`api/_conocimiento.js`, `api/_diagnostico.js` y `api/_lector-perfil.js`** — **fuente única** de las indicaciones de la IA. PHP las lee con `texto_js()`, que busca `` const NOMBRE = `…`; `` o `` export default `…`; ``. Por eso esos textos no pueden llevar comillas invertidas dentro.
   - Si cambian los campos del diagnóstico o del lector, hay que tocar **a la vez** `api/_*.js`, `php/*.php` y `lib/diagnostico.js`.

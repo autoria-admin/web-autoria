@@ -14,7 +14,10 @@ DirectoryIndex index.html
   RewriteRule ^ - [F,L]
 
   # Direcciones públicas -> archivos PHP (las mismas que usa la web en Vercel)
-  RewriteRule ^api/(asistente|lector-perfil|diagnostico|contacto)/?$ php/$1.php [L,QSA]
+  RewriteRule ^api/(asistente|lector-perfil|diagnostico|contacto|propuesta)/?$ php/$1.php [L,QSA]
+
+  # Dinámica de las charlas (no sale en el menú y lleva noindex)
+  RewriteRule ^charla/propuesta/?$ charla-propuesta.html [L,QSA]
   RewriteRule ^panel/?$ php/panel.php [L,QSA]
   RewriteRule ^instalar/?$ php/instalar.php [L,QSA]
 

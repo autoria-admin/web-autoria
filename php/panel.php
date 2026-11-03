@@ -38,6 +38,26 @@ if ($logged) {
   foreach ($byId as $id => $r) { if (array_key_exists($id, $results)) $r['resultado'] = $results[$id]; $rows[] = $r; }
 }
 
+// Propuestas de valor de las charlas (anónimas): van en su propia vista.
+$props = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') === 'propuesta'; }));
+$rows = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') !== 'propuesta'; }));
+$vistaProps = $logged && (($_GET['vista'] ?? '') === 'propuestas' || ($_GET['csv'] ?? '') === 'propuestas');
+$codigos = array_values(array_unique(array_map(function ($r) { return ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; }, $props)));
+sort($codigos);
+$codigo = clean_str($_GET['c'] ?? '', 20);
+if ($codigo !== '') $props = array_values(array_filter($props, function ($r) use ($codigo) { return (($r['charla'] ?? '') ?: 'SIN CÓDIGO') === $codigo; }));
+function frase_propuesta($r) { return 'Para ' . ($r['para'] ?? '') . ', aporto ' . ($r['aporto'] ?? '') . ', gracias a ' . ($r['gracias_a'] ?? '') . '.'; }
+
+if ($vistaProps && ($_GET['csv'] ?? '') === 'propuestas') {
+  header('Content-Type: text/csv; charset=utf-8');
+  header('Content-Disposition: attachment; filename="autoria-propuestas-' . ($codigo !== '' ? preg_replace('/[^A-Za-z0-9_-]/', '', $codigo) . '-' : '') . date('Y-m-d') . '.csv"');
+  $out = fopen('php://output', 'w');
+  fwrite($out, "\xEF\xBB\xBF");
+  fputcsv($out, ['fecha', 'charla', 'para', 'aporto', 'gracias_a', 'frase'], ';');
+  foreach ($props as $r) fputcsv($out, [$r['fecha'] ?? '', $r['charla'] ?? '', $r['para'] ?? '', $r['aporto'] ?? '', $r['gracias_a'] ?? '', frase_propuesta($r)], ';');
+  exit;
+}
+
 if ($logged && isset($_GET['csv'])) {
   header('Content-Type: text/csv; charset=utf-8');
   header('Content-Disposition: attachment; filename="autoria-contactos-' . date('Y-m-d') . '.csv"');
@@ -90,7 +110,10 @@ function fecha_es($iso) {
   .detail dt { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); }
   .detail dd { margin: 0 0 .6rem; white-space: pre-wrap; }
   .empty { padding: 3rem 0; text-align: center; color: var(--mute); }
-  @media (max-width: 720px) { .card summary { grid-template-columns: 1fr; } }
+  .filtro { display: flex; gap: .6rem; align-items: center; margin-bottom: 1rem; }
+  select { padding: .5rem .7rem; border: 1px solid rgba(21,22,28,.3); border-radius: 3px; font: inherit; background: #fff; }
+  .card.prop { display: grid; grid-template-columns: 9rem 7rem 1fr; gap: .8rem; align-items: baseline; }
+  @media (max-width: 720px) { .card summary, .card.prop { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body><div class="wrap">
@@ -104,10 +127,32 @@ function fecha_es($iso) {
     <button class="btn primary" type="submit">Entrar</button>
     <?php if ($error): ?><p class="err"><?php echo $e($error); ?></p><?php endif; ?>
   </form>
+<?php elseif ($vistaProps): ?>
+  <div class="bar">
+    <div><h1>Autoría<span>.</span> Propuestas</h1><p class="meta"><?php echo count($props); ?> propuestas de valor<?php echo $codigo !== '' ? ' de la charla ' . $e($codigo) : ''; ?> · las más recientes primero</p></div>
+    <div><a class="btn" href="/panel?csv=propuestas<?php echo $codigo !== '' ? '&amp;c=' . rawurlencode($codigo) : ''; ?>">Descargar Excel (CSV)</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+  </div>
+  <form class="filtro" method="get" action="/panel">
+    <input type="hidden" name="vista" value="propuestas">
+    <label for="c" class="meta">Charla</label>
+    <select id="c" name="c" onchange="this.form.submit()">
+      <option value="">Todas</option>
+      <?php foreach ($codigos as $k): ?><option value="<?php echo $e($k); ?>"<?php echo $k === $codigo ? ' selected' : ''; ?>><?php echo $e($k); ?></option><?php endforeach; ?>
+    </select>
+    <noscript><button class="btn" type="submit">Filtrar</button></noscript>
+  </form>
+  <?php if (!$props): ?><p class="empty">Todavía no ha llegado ninguna propuesta.</p><?php endif; ?>
+  <?php foreach ($props as $r): ?>
+    <div class="card prop">
+      <span class="meta"><?php echo $e(fecha_es($r['fecha'] ?? '')); ?></span>
+      <span><span class="tag"><?php echo $e(($r['charla'] ?? '') ?: 'Sin código'); ?></span></span>
+      <span><?php echo $e(frase_propuesta($r)); ?></span>
+    </div>
+  <?php endforeach; ?>
 <?php else: ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Panel</h1><p class="meta"><?php echo count($rows); ?> registros · los más recientes primero</p></div>
-    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas de charlas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$rows): ?><p class="empty">Todavía no ha llegado ningún contacto.</p><?php endif; ?>
   <?php foreach ($rows as $r): $isD = ($r['tipo'] ?? '') === 'diagnostico'; $p = $r['perfil'] ?? []; $q = $r['respuestas'] ?? []; $c = $r['calculo'] ?? []; $res = $r['resultado'] ?? null; ?>
