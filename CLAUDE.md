@@ -3,7 +3,7 @@
 Web de **Autoría**, la agencia de marca personal en **redes sociales** (LinkedIn, Instagram, YouTube, TikTok…) para empresarios, directivos y profesionales expertos de España y Costa Rica. Todo el contenido son vídeos contados con la propia voz del cliente.
 
 - **Titular y entidad que factura:** Asociación Junior Empresa ERYON (Madrid), NIF G23915176, Plaza de San Martín, 1, 28013 Madrid. Email de privacidad: eryoncompany@gmail.com.
-- **Contacto público:** admin.autoria@gmail.com y la página de empresa de LinkedIn. La agenda de llamadas es de Google Calendar. Los tres están en `lib/manifest.js`. No hay WhatsApp ni teléfono público.
+- **Contacto público:** admin.autoria@gmail.com y la página de empresa de LinkedIn. La agenda de llamadas es de Google Calendar. Los tres están en `lib/manifest.js`. No hay WhatsApp ni teléfono público de contacto; la comunidad de WhatsApp (`WHATSAPP_COMMUNITY_URL` en `lib/manifest.js`) solo aparece al final de `/charla/diagnostico`.
 - **Idioma y tono:** todo en español, tuteando. El tono es editorial, sobrio y profesional, sin jerga de marketing ni emojis.
 
 Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en general. Que no vuelva a aparecer «solo LinkedIn» salvo donde tenga sentido, como el PDF de LinkedIn en el diagnóstico.
@@ -11,7 +11,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 ## Dónde está publicada
 
 - **Hostinger, plan Business.** El sitio es `silver-alligator-184608.hostingersite.com`, un dominio temporal; el dominio definitivo está pendiente.
-- **Publicación automática.** Cada `git push` a `main` del repositorio **público** `github.com/caarloossc/web-autoria` se despliega solo en `public_html`, mediante la aplicación de GitHub de Hostinger. Tarda unos 10–20 s.
+- **Publicación automática.** Cada `git push` a `main` del repositorio **público** `github.com/autoria-admin/web-autoria` (antes `caarloossc/web-autoria`, que redirige) se despliega solo en `public_html`, mediante la aplicación de GitHub de Hostinger. Tarda unos 10–20 s.
 - **En hPanel:** Sitios web → Administrar sitio web → Avanzado → GIT / Configuración de PHP (8.3).
 - **No tocar la web de la empresa** (`eryoncompany.eryoncompany.com`, WordPress) ni su `public_html`.
 - **Vercel ya no existe.** Se borró en octubre de 2026. Los archivos `api/*.js`, `vercel.json` y `tools/dev-server.mjs` se conservan porque PHP lee de `api/` los textos de la IA (ver más abajo).
@@ -37,6 +37,11 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Tres campos (para, aporto, gracias a), la frase en vivo, «Listo» y la frase en grande para leerla en voz alta.
   - Guarda anónimo en `/api/propuesta` (`php/propuesta.php`): sin nombre ni correo y sin aviso por email. Se ve en `/panel?vista=propuestas`, filtrable por código y con CSV.
   - La frase queda en `localStorage` con la clave `autoria_propuesta` (JSON con `frase`, `para`, `aporto`, `gracias_a`, `charla` y `fecha`) para que la recupere el diagnóstico. Sin conexión, los envíos esperan en `autoria_propuesta_cola` y se reintentan solos.
+- **`charla-diagnostico.html` + `lib/charla-diagnostico.js`** — cierre de las charlas, en `/charla/diagnostico?c=C01`.
+  - Correo (obligatorio), nombre (opcional), red principal (LinkedIn, Instagram o TikTok), enlace o usuario del perfil y casilla de consentimiento. Muestra «Su frase» si `autoria_propuesta` está en el móvil; si no, un campo opcional para pegarla.
+  - Guarda en `/api/charla-diagnostico` (`php/charla-diagnostico.php`) y avisa al equipo por email de cada envío. El id lo pone el móvil, así que los reintentos y los dobles clics no duplican ni el registro ni el aviso.
+  - Sin conexión: «Casi listo» y cola en `autoria_diagnostico_cola`; «Listo» y el botón de la comunidad de WhatsApp solo cuando el envío llega.
+- **Medición de las charlas:** `/api/visita` (`php/visita.php`) cuenta una visita por móvil, página y código, sin cookies ni IP, en `autoria-privado/visitas.json`. El panel (`/panel?vista=charlas`) muestra visitas, propuestas y diagnósticos pedidos por código, y el CSV de las solicitudes.
 - **`main.js`** — efectos y comportamiento de la portada:
   - anotaciones a mano (`data-mark` circle, underline, strike o tick), que el JS reescala al tamaño real;
   - textos que aparecen al hacer scroll (`data-split`, `data-reveal`);
@@ -49,9 +54,9 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Páginas legales:** `privacidad.html`, `aviso-legal.html` y `creditos.html`.
 - **`php/`** — la parte de servidor en Hostinger:
   - `_comun.php`: utilidades, Gemini, límites de uso y guardado;
-  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `panel.php` e `instalar.php`.
+  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `charla-diagnostico.php`, `visita.php`, `panel.php` e `instalar.php`.
 - **`.htaccess`:**
-  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/propuesta` en `charla-propuesta.html`;
+  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta|charla-diagnostico|visita)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/(propuesta|diagnostico)` en `charla-*.html`;
   - bloquea `php/`, `api/`, `tools/`, `.git`, los archivos que empiezan por punto, `*.md` y los `*.json` de configuración.
 - **`api/_conocimiento.js`, `api/_diagnostico.js` y `api/_lector-perfil.js`** — **fuente única** de las indicaciones de la IA. PHP las lee con `texto_js()`, que busca `` const NOMBRE = `…`; `` o `` export default `…`; ``. Por eso esos textos no pueden llevar comillas invertidas dentro.
   - Si cambian los campos del diagnóstico o del lector, hay que tocar **a la vez** `api/_*.js`, `php/*.php` y `lib/diagnostico.js`.

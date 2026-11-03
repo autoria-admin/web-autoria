@@ -40,13 +40,38 @@ if ($logged) {
 
 // Propuestas de valor de las charlas (anónimas): van en su propia vista.
 $props = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') === 'propuesta'; }));
-$rows = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') !== 'propuesta'; }));
+$diags = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') === 'charla-diagnostico'; }));
+$rows = array_values(array_filter($rows, function ($r) { return !in_array($r['tipo'] ?? '', ['propuesta', 'charla-diagnostico'], true); }));
+$vistaCharlas = $logged && (($_GET['vista'] ?? '') === 'charlas' || ($_GET['csv'] ?? '') === 'charlas');
+
+// Resumen por código de charla: visitas (contador anónimo), propuestas y diagnósticos pedidos.
+$resumen = [];
+if ($vistaCharlas) {
+  $fila = function () { return ['vp' => 0, 'p' => 0, 'vd' => 0, 'd' => 0]; };
+  foreach (leer_visitas() as $k => $v) { $k = $k ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['vp'] += (int) ($v['propuesta'] ?? 0); $resumen[$k]['vd'] += (int) ($v['diagnostico'] ?? 0); }
+  foreach ($props as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['p']++; }
+  foreach ($diags as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['d']++; }
+  ksort($resumen);
+}
 $vistaProps = $logged && (($_GET['vista'] ?? '') === 'propuestas' || ($_GET['csv'] ?? '') === 'propuestas');
 $codigos = array_values(array_unique(array_map(function ($r) { return ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; }, $props)));
 sort($codigos);
 $codigo = clean_str($_GET['c'] ?? '', 20);
 if ($codigo !== '') $props = array_values(array_filter($props, function ($r) use ($codigo) { return (($r['charla'] ?? '') ?: 'SIN CÓDIGO') === $codigo; }));
 function frase_propuesta($r) { return 'Para ' . ($r['para'] ?? '') . ', aporto ' . ($r['aporto'] ?? '') . ', gracias a ' . ($r['gracias_a'] ?? '') . '.'; }
+
+$codigosD = array_keys($resumen);
+if ($vistaCharlas && $codigo !== '') $diags = array_values(array_filter($diags, function ($r) use ($codigo) { return (($r['charla'] ?? '') ?: 'SIN CÓDIGO') === $codigo; }));
+
+if ($vistaCharlas && ($_GET['csv'] ?? '') === 'charlas') {
+  header('Content-Type: text/csv; charset=utf-8');
+  header('Content-Disposition: attachment; filename="autoria-diagnosticos-charla-' . ($codigo !== '' ? preg_replace('/[^A-Za-z0-9_-]/', '', $codigo) . '-' : '') . date('Y-m-d') . '.csv"');
+  $out = fopen('php://output', 'w');
+  fwrite($out, "\xEF\xBB\xBF");
+  fputcsv($out, ['fecha', 'charla', 'email', 'nombre', 'red', 'perfil', 'propuesta de valor', 'consentimiento'], ';');
+  foreach ($diags as $r) fputcsv($out, [$r['fecha'] ?? '', $r['charla'] ?? '', $r['email'] ?? '', $r['nombre'] ?? '', $r['red'] ?? '', $r['perfil'] ?? '', $r['propuesta'] ?? '', $r['consentimiento'] ?? ''], ';');
+  exit;
+}
 
 if ($vistaProps && ($_GET['csv'] ?? '') === 'propuestas') {
   header('Content-Type: text/csv; charset=utf-8');
@@ -113,6 +138,15 @@ function fecha_es($iso) {
   .filtro { display: flex; gap: .6rem; align-items: center; margin-bottom: 1rem; }
   select { padding: .5rem .7rem; border: 1px solid rgba(21,22,28,.3); border-radius: 3px; font: inherit; background: #fff; }
   .card.prop { display: grid; grid-template-columns: 9rem 7rem 1fr; gap: .8rem; align-items: baseline; }
+  .bar.sub { margin-top: 2.4rem; }
+  h2 { font-family: Georgia, serif; font-weight: 400; font-size: 1.4rem; }
+  .tabla-wrap { overflow-x: auto; }
+  .tabla { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); font-size: .95rem; }
+  .tabla th, .tabla td { padding: .65rem .8rem; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  .tabla th:first-child, .tabla td:first-child { text-align: left; }
+  .tabla th { font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); }
+  .tabla a { color: var(--ink); font-weight: 600; }
+  .nota { margin-top: .6rem; }
   @media (max-width: 720px) { .card summary, .card.prop { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -127,10 +161,53 @@ function fecha_es($iso) {
     <button class="btn primary" type="submit">Entrar</button>
     <?php if ($error): ?><p class="err"><?php echo $e($error); ?></p><?php endif; ?>
   </form>
+<?php elseif ($vistaCharlas): ?>
+  <div class="bar">
+    <div><h1>Autoría<span>.</span> Charlas</h1><p class="meta">Visitas, propuestas y diagnósticos pedidos por código de charla</p></div>
+    <div><a class="btn" href="/panel?vista=propuestas">Propuestas</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+  </div>
+  <?php if (!$resumen): ?><p class="empty">Todavía no hay datos de ninguna charla.</p><?php else: ?>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Charla</th><th>Visitas propuesta</th><th>Propuestas</th><th>Visitas diagnóstico</th><th>Diagnósticos pedidos</th><th>Pedidos / visitas</th></tr></thead>
+    <tbody><?php foreach ($resumen as $k => $n): ?>
+      <tr><td><a href="/panel?vista=charlas&amp;c=<?php echo rawurlencode($k); ?>"><?php echo $e($k); ?></a></td><td><?php echo $n['vp']; ?></td><td><?php echo $n['p']; ?></td><td><?php echo $n['vd']; ?></td><td><?php echo $n['d']; ?></td><td><?php echo $n['vd'] ? round(100 * $n['d'] / $n['vd']) . ' %' : '—'; ?></td></tr>
+    <?php endforeach; ?></tbody>
+  </table></div>
+  <p class="meta nota">Las visitas se cuentan una vez por móvil y charla, sin cookies ni datos personales.</p>
+  <?php endif; ?>
+  <div class="bar sub">
+    <div><h2>Diagnósticos pedidos</h2><p class="meta"><?php echo count($diags); ?> solicitudes<?php echo $codigo !== '' ? ' de la charla ' . $e($codigo) : ''; ?> · las más recientes primero</p></div>
+    <div><a class="btn primary" href="/panel?csv=charlas<?php echo $codigo !== '' ? '&amp;c=' . rawurlencode($codigo) : ''; ?>">Descargar Excel (CSV)</a></div>
+  </div>
+  <form class="filtro" method="get" action="/panel">
+    <input type="hidden" name="vista" value="charlas">
+    <label for="c" class="meta">Charla</label>
+    <select id="c" name="c" onchange="this.form.submit()">
+      <option value="">Todas</option>
+      <?php foreach ($codigosD as $k): ?><option value="<?php echo $e($k); ?>"<?php echo $k === $codigo ? ' selected' : ''; ?>><?php echo $e($k); ?></option><?php endforeach; ?>
+    </select>
+    <noscript><button class="btn" type="submit">Filtrar</button></noscript>
+  </form>
+  <?php if (!$diags): ?><p class="empty">Todavía no ha llegado ninguna solicitud.</p><?php endif; ?>
+  <?php foreach ($diags as $r): ?>
+    <details class="card">
+      <summary>
+        <span class="meta"><?php echo $e(fecha_es($r['fecha'] ?? '')); ?></span>
+        <span><span class="tag d"><?php echo $e(($r['charla'] ?? '') ?: 'Sin código'); ?></span></span>
+        <span class="who"><strong><?php echo $e(($r['nombre'] ?? '') ?: '—'); ?></strong><span class="meta"><?php echo $e($r['email'] ?? ''); ?></span></span>
+        <span class="meta"><?php echo $e($r['red'] ?? ''); ?></span>
+      </summary>
+      <dl class="detail">
+        <dt>Perfil</dt><dd><?php echo $e($r['perfil'] ?? ''); ?></dd>
+        <dt>Propuesta de valor</dt><dd><?php echo $e(($r['propuesta'] ?? '') ?: '—'); ?></dd>
+        <dt>Consentimiento</dt><dd><?php echo $e($r['consentimiento'] ?? '—'); ?></dd>
+      </dl>
+    </details>
+  <?php endforeach; ?>
 <?php elseif ($vistaProps): ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Propuestas</h1><p class="meta"><?php echo count($props); ?> propuestas de valor<?php echo $codigo !== '' ? ' de la charla ' . $e($codigo) : ''; ?> · las más recientes primero</p></div>
-    <div><a class="btn" href="/panel?csv=propuestas<?php echo $codigo !== '' ? '&amp;c=' . rawurlencode($codigo) : ''; ?>">Descargar Excel (CSV)</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?csv=propuestas<?php echo $codigo !== '' ? '&amp;c=' . rawurlencode($codigo) : ''; ?>">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <form class="filtro" method="get" action="/panel">
     <input type="hidden" name="vista" value="propuestas">
@@ -152,7 +229,7 @@ function fecha_es($iso) {
 <?php else: ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Panel</h1><p class="meta"><?php echo count($rows); ?> registros · los más recientes primero</p></div>
-    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas de charlas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$rows): ?><p class="empty">Todavía no ha llegado ningún contacto.</p><?php endif; ?>
   <?php foreach ($rows as $r): $isD = ($r['tipo'] ?? '') === 'diagnostico'; $p = $r['perfil'] ?? []; $q = $r['respuestas'] ?? []; $c = $r['calculo'] ?? []; $res = $r['resultado'] ?? null; ?>
