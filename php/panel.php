@@ -65,8 +65,8 @@ $vistaCharlas = $logged && (($_GET['vista'] ?? '') === 'charlas' || ($_GET['csv'
 // Resumen por código de charla: visitas (contador anónimo), propuestas y diagnósticos pedidos.
 $resumen = [];
 if ($vistaCharlas) {
-  $fila = function () { return ['vp' => 0, 'p' => 0, 'vd' => 0, 'd' => 0]; };
-  foreach (leer_visitas() as $k => $v) { $k = $k ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['vp'] += (int) ($v['propuesta'] ?? 0); $resumen[$k]['vd'] += (int) ($v['diagnostico'] ?? 0); }
+  $fila = function () { return ['vp' => 0, 'p' => 0, 'vd' => 0, 'd' => 0, 'wa' => 0]; };
+  foreach (leer_visitas() as $k => $v) { $k = $k ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['vp'] += (int) ($v['propuesta'] ?? 0); $resumen[$k]['vd'] += (int) ($v['diagnostico'] ?? 0); $resumen[$k]['wa'] += (int) ($v['whatsapp'] ?? 0); }
   foreach ($props as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['p']++; }
   foreach ($diags as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['d']++; }
   ksort($resumen);
@@ -207,12 +207,12 @@ function fecha_es($iso) {
   </div>
   <?php if (!$resumen): ?><p class="empty">Todavía no hay datos de ninguna charla.</p><?php else: ?>
   <div class="tabla-wrap"><table class="tabla">
-    <thead><tr><th>Charla</th><th>Visitas propuesta</th><th>Propuestas</th><th>Visitas diagnóstico</th><th>Diagnósticos pedidos</th><th>Pedidos / visitas</th></tr></thead>
+    <thead><tr><th>Charla</th><th>Visitas propuesta</th><th>Propuestas</th><th>Visitas diagnóstico</th><th>Diagnósticos pedidos</th><th>Pedidos / visitas</th><th>Clics en WhatsApp</th></tr></thead>
     <tbody><?php foreach ($resumen as $k => $n): ?>
-      <tr><td><a href="/panel?vista=charlas&amp;c=<?php echo rawurlencode($k); ?>"><?php echo $e($k); ?></a></td><td><?php echo $n['vp']; ?></td><td><?php echo $n['p']; ?></td><td><?php echo $n['vd']; ?></td><td><?php echo $n['d']; ?></td><td><?php echo $n['vd'] ? round(100 * $n['d'] / $n['vd']) . ' %' : '—'; ?></td></tr>
+      <tr><td><a href="/panel?vista=charlas&amp;c=<?php echo rawurlencode($k); ?>"><?php echo $e($k); ?></a></td><td><?php echo $n['vp']; ?></td><td><?php echo $n['p']; ?></td><td><?php echo $n['vd']; ?></td><td><?php echo $n['d']; ?></td><td><?php echo $n['vd'] ? round(100 * $n['d'] / $n['vd']) . ' %' : '—'; ?></td><td><?php echo $n['wa']; ?></td></tr>
     <?php endforeach; ?></tbody>
   </table></div>
-  <p class="meta nota">Las visitas se cuentan una vez por móvil y charla, sin cookies ni datos personales.</p>
+  <p class="meta nota">Las visitas y los clics en WhatsApp se cuentan una vez por móvil y charla, sin cookies ni datos personales. Un clic no garantiza que la persona se haya unido.</p>
   <?php endif; ?>
   <div class="bar sub">
     <div><h2>Diagnósticos pedidos</h2><p class="meta"><?php echo count($diags); ?> solicitudes<?php echo $codigo !== '' ? ' de la charla ' . $e($codigo) : ''; ?> · las más recientes primero</p></div>
