@@ -19,7 +19,25 @@ $error = '';
 
 if (isset($_GET['salir'])) { $_SESSION = []; session_destroy(); header('Location: /panel', true, 303); exit; }
 
-if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+// Ajustes de los avisos por email (solo con la sesión iniciada).
+$avisoMsg = '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !empty($_SESSION['ok']) && $hash !== '' && isset($_POST['accion'])) {
+  if ($_POST['accion'] === 'guardar_smtp') {
+    $u = clean_str($_POST['smtp_user'] ?? '', 160);
+    $pw = preg_replace('/\s+/', '', (string) ($_POST['smtp_pass'] ?? ''));
+    if (!es_email($u) || strlen($pw) < 16) $avisoMsg = 'Revisa la cuenta de Gmail y la contraseña de aplicación (16 letras).';
+    else {
+      $err = smtp_gmail($u, $pw, config()['aviso_email'] ?: $u, 'Prueba de avisos — Autoría', "Los avisos de la web ya se envían por Gmail.\n");
+      if ($err !== '') $avisoMsg = 'No se ha guardado. ' . $err;
+      elseif (guardar_config(['smtp_user' => $u, 'smtp_pass' => $pw])) { header('Location: /panel?vista=avisos&ok=1', true, 303); exit; }
+      else $avisoMsg = 'No se pudo guardar la configuración.';
+    }
+  } elseif ($_POST['accion'] === 'probar') {
+    $ok = notify_team('Prueba de avisos — Autoría', ['mensaje' => 'Correo de prueba enviado desde el panel.', 'fecha' => ahora()]);
+    header('Location: /panel?vista=avisos&' . ($ok ? 'ok=2' : 'fallo=1'), true, 303); exit;
+  }
+}
+elseif (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   if (rate_limit('login', 5, 30, 300) !== null) { $error = 'Demasiados intentos. Espera unos minutos.'; http_response_code(429); }
   elseif ($hash !== '' && password_verify((string) ($_POST['clave'] ?? ''), $hash)) { session_regenerate_id(true); $_SESSION['ok'] = 1; header('Location: /panel', true, 303); exit; }
   else { $error = 'Contraseña incorrecta.'; http_response_code(401); }
@@ -147,6 +165,8 @@ function fecha_es($iso) {
   .tabla th { font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); }
   .tabla a { color: var(--ink); font-weight: 600; }
   .nota { margin-top: .6rem; }
+  .okmsg { color: #1f6b3a; font-weight: 600; margin-bottom: 1rem; }
+  .login.ajustes { margin: 1.4rem 0 1rem; }
   @media (max-width: 720px) { .card summary, .card.prop { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -161,6 +181,25 @@ function fecha_es($iso) {
     <button class="btn primary" type="submit">Entrar</button>
     <?php if ($error): ?><p class="err"><?php echo $e($error); ?></p><?php endif; ?>
   </form>
+<?php elseif (($_GET['vista'] ?? '') === 'avisos'): $cfgA = config(); ?>
+  <div class="bar">
+    <div><h1>Autoría<span>.</span> Avisos por email</h1><p class="meta">Los avisos llegan a <?php echo $e(($cfgA['aviso_email'] ?? '') ?: 'ningún correo (configúralo en /instalar)'); ?></p></div>
+    <div><a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?vista=charlas">Charlas</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+  </div>
+  <?php if (($_GET['ok'] ?? '') === '1'): ?><p class="okmsg">Guardado. Te hemos enviado un correo de prueba.</p><?php endif; ?>
+  <?php if (($_GET['ok'] ?? '') === '2'): ?><p class="okmsg">Correo de prueba enviado.</p><?php endif; ?>
+  <?php if (isset($_GET['fallo'])): ?><p class="err">No se pudo enviar el correo de prueba.</p><?php endif; ?>
+  <?php if ($avisoMsg): ?><p class="err"><?php echo $e($avisoMsg); ?></p><?php endif; ?>
+  <p class="meta">Envío: <strong><?php echo !empty($cfgA['smtp_user']) ? 'por Gmail (' . $e($cfgA['smtp_user']) . ')' : 'por el servidor (el dominio temporal no puede enviar: Gmail lo descarta)'; ?></strong></p>
+  <form class="login ajustes" method="post" action="/panel?vista=avisos" autocomplete="off">
+    <input type="hidden" name="accion" value="guardar_smtp">
+    <label for="smtp_user" class="meta">Cuenta de Gmail que envía los avisos</label>
+    <input id="smtp_user" name="smtp_user" type="email" value="<?php echo $e(($cfgA['smtp_user'] ?? '') ?: 'admin.autoria@gmail.com'); ?>" required>
+    <label for="smtp_pass" class="meta">Contraseña de aplicación de esa cuenta (16 letras)</label>
+    <input id="smtp_pass" name="smtp_pass" type="password" required>
+    <button class="btn primary" type="submit">Guardar y enviar prueba</button>
+  </form>
+  <form method="post" action="/panel?vista=avisos"><input type="hidden" name="accion" value="probar"><button class="btn" type="submit">Enviar solo un correo de prueba</button></form>
 <?php elseif ($vistaCharlas): ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Charlas</h1><p class="meta">Visitas, propuestas y diagnósticos pedidos por código de charla</p></div>
@@ -229,7 +268,7 @@ function fecha_es($iso) {
 <?php else: ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Panel</h1><p class="meta"><?php echo count($rows); ?> registros · los más recientes primero</p></div>
-    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=avisos">Avisos por email</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$rows): ?><p class="empty">Todavía no ha llegado ningún contacto.</p><?php endif; ?>
   <?php foreach ($rows as $r): $isD = ($r['tipo'] ?? '') === 'diagnostico'; $p = $r['perfil'] ?? []; $q = $r['respuestas'] ?? []; $c = $r['calculo'] ?? []; $res = $r['resultado'] ?? null; ?>
