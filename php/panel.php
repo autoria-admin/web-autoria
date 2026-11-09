@@ -21,7 +21,7 @@ if (isset($_GET['salir'])) { $_SESSION = []; session_destroy(); header('Location
 
 // Tras iniciar sesión se vuelve a la vista pedida (p. ej. /panel?vista=hoja), solo si es una de las del panel.
 $vistaPedida = (string) ($_GET['vista'] ?? '');
-$volver = in_array($vistaPedida, ['hoja', 'charlas', 'propuestas', 'avisos'], true) ? '/panel?vista=' . $vistaPedida : '/panel';
+$volver = in_array($vistaPedida, ['hoja', 'charlas', 'propuestas', 'registros', 'avisos'], true) ? '/panel?vista=' . $vistaPedida : '/panel';
 
 // Ajustes de los avisos por email (solo con la sesión iniciada).
 $avisoMsg = '';
@@ -90,14 +90,16 @@ if ($logged) {
 // Propuestas de valor de las charlas (anónimas): van en su propia vista.
 $props = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') === 'propuesta'; }));
 $diags = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') === 'charla-diagnostico'; }));
-$rows = array_values(array_filter($rows, function ($r) { return !in_array($r['tipo'] ?? '', ['propuesta', 'charla-diagnostico'], true); }));
+$regs = array_values(array_filter($rows, function ($r) { return ($r['tipo'] ?? '') === 'charla-registro'; }));
+$rows = array_values(array_filter($rows, function ($r) { return !in_array($r['tipo'] ?? '', ['propuesta', 'charla-diagnostico', 'charla-registro'], true); }));
 $vistaCharlas = $logged && (($_GET['vista'] ?? '') === 'charlas' || ($_GET['csv'] ?? '') === 'charlas');
 
 // Resumen por código de charla: visitas (contador anónimo), propuestas y diagnósticos pedidos.
 $resumen = [];
 if ($vistaCharlas) {
-  $fila = function () { return ['vp' => 0, 'p' => 0, 'vd' => 0, 'd' => 0, 'wa' => 0]; };
-  foreach (leer_visitas() as $k => $v) { $k = $k ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['vp'] += (int) ($v['propuesta'] ?? 0); $resumen[$k]['vd'] += (int) ($v['diagnostico'] ?? 0); $resumen[$k]['wa'] += (int) ($v['whatsapp'] ?? 0); }
+  $fila = function () { return ['vr' => 0, 'r' => 0, 'vp' => 0, 'p' => 0, 'vd' => 0, 'd' => 0, 'wa' => 0]; };
+  foreach (leer_visitas() as $k => $v) { $k = $k ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['vr'] += (int) ($v['registro'] ?? 0); $resumen[$k]['vp'] += (int) ($v['propuesta'] ?? 0); $resumen[$k]['vd'] += (int) ($v['diagnostico'] ?? 0); $resumen[$k]['wa'] += (int) ($v['whatsapp'] ?? 0); }
+  foreach ($regs as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['r']++; }
   foreach ($props as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['p']++; }
   foreach ($diags as $r) { $k = ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; $resumen[$k] = $resumen[$k] ?? $fila(); $resumen[$k]['d']++; }
   ksort($resumen);
@@ -110,6 +112,21 @@ if ($codigo !== '') $props = array_values(array_filter($props, function ($r) use
 function frase_propuesta($r) { return 'Para ' . ($r['para'] ?? '') . ', aporto ' . ($r['aporto'] ?? '') . ', gracias a ' . ($r['gracias_a'] ?? '') . '.'; }
 
 $codigosD = array_keys($resumen);
+
+// Inscripciones a las charlas (QR del flyer): su propia vista, filtrable por código y con CSV.
+$vistaRegs = $logged && (($_GET['vista'] ?? '') === 'registros' || ($_GET['csv'] ?? '') === 'registros');
+$codigosR = array_values(array_unique(array_map(function ($r) { return ($r['charla'] ?? '') ?: 'SIN CÓDIGO'; }, $regs)));
+sort($codigosR);
+if ($vistaRegs && $codigo !== '') $regs = array_values(array_filter($regs, function ($r) use ($codigo) { return (($r['charla'] ?? '') ?: 'SIN CÓDIGO') === $codigo; }));
+if ($vistaRegs && ($_GET['csv'] ?? '') === 'registros') {
+  header('Content-Type: text/csv; charset=utf-8');
+  header('Content-Disposition: attachment; filename="autoria-inscripciones-' . ($codigo !== '' ? preg_replace('/[^A-Za-z0-9_-]/', '', $codigo) . '-' : '') . date('Y-m-d') . '.csv"');
+  $out = fopen('php://output', 'w');
+  fwrite($out, "\xEF\xBB\xBF");
+  fputcsv($out, ['fecha', 'charla', 'nombre y apellidos', 'email', 'asignatura', 'negocio o trabajo fuera de la universidad', 'consentimiento'], ';');
+  foreach ($regs as $r) fputcsv($out, [$r['fecha'] ?? '', $r['charla'] ?? '', $r['nombre'] ?? '', $r['email'] ?? '', $r['asignatura'] ?? '', $r['negocio_o_trabajo'] ?? '', $r['consentimiento'] ?? ''], ';');
+  exit;
+}
 if ($vistaCharlas && $codigo !== '') $diags = array_values(array_filter($diags, function ($r) use ($codigo) { return (($r['charla'] ?? '') ?: 'SIN CÓDIGO') === $codigo; }));
 
 if ($vistaCharlas && ($_GET['csv'] ?? '') === 'charlas') {
@@ -198,7 +215,7 @@ function fecha_es($iso) {
   .nota { margin-top: .6rem; }
   .okmsg { color: #1f6b3a; font-weight: 600; margin-bottom: 1rem; }
   .login.ajustes { margin: 1.4rem 0 1rem; }
-  .tabla td.izq { text-align: left; white-space: normal; min-width: 14rem; }
+  .tabla th.izq, .tabla td.izq { text-align: left; white-space: normal; min-width: 14rem; }
   @media (max-width: 720px) { .card summary, .card.prop { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -275,14 +292,14 @@ function fecha_es($iso) {
   <?php else: ?><p class="meta">Todavía no hay visitas de ninguna charla.</p><?php endif; ?>
 <?php elseif ($vistaCharlas): ?>
   <div class="bar">
-    <div><h1>Autoría<span>.</span> Charlas</h1><p class="meta">Visitas, propuestas y diagnósticos pedidos por código de charla</p></div>
-    <div><a class="btn" href="/panel?vista=propuestas">Propuestas</a> <a class="btn" href="/panel?vista=hoja">Hoja de Google</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><h1>Autoría<span>.</span> Charlas</h1><p class="meta">Visitas, inscritos, propuestas y diagnósticos pedidos por código de charla</p></div>
+    <div><a class="btn" href="/panel?vista=registros">Inscripciones</a> <a class="btn" href="/panel?vista=propuestas">Propuestas</a> <a class="btn" href="/panel?vista=hoja">Hoja de Google</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$resumen): ?><p class="empty">Todavía no hay datos de ninguna charla.</p><?php else: ?>
   <div class="tabla-wrap"><table class="tabla">
-    <thead><tr><th>Charla</th><th>Visitas propuesta</th><th>Propuestas</th><th>Visitas diagnóstico</th><th>Diagnósticos pedidos</th><th>Pedidos / visitas</th><th>Clics en WhatsApp</th></tr></thead>
+    <thead><tr><th>Charla</th><th>Visitas inscripción</th><th>Inscritos</th><th>Visitas propuesta</th><th>Propuestas</th><th>Visitas diagnóstico</th><th>Diagnósticos pedidos</th><th>Pedidos / visitas</th><th>Clics en WhatsApp</th></tr></thead>
     <tbody><?php foreach ($resumen as $k => $n): ?>
-      <tr><td><a href="/panel?vista=charlas&amp;c=<?php echo rawurlencode($k); ?>"><?php echo $e($k); ?></a></td><td><?php echo $n['vp']; ?></td><td><?php echo $n['p']; ?></td><td><?php echo $n['vd']; ?></td><td><?php echo $n['d']; ?></td><td><?php echo $n['vd'] ? round(100 * $n['d'] / $n['vd']) . ' %' : '—'; ?></td><td><?php echo $n['wa']; ?></td></tr>
+      <tr><td><a href="/panel?vista=charlas&amp;c=<?php echo rawurlencode($k); ?>"><?php echo $e($k); ?></a></td><td><?php echo $n['vr']; ?></td><td><?php echo $n['r']; ?></td><td><?php echo $n['vp']; ?></td><td><?php echo $n['p']; ?></td><td><?php echo $n['vd']; ?></td><td><?php echo $n['d']; ?></td><td><?php echo $n['vd'] ? round(100 * $n['d'] / $n['vd']) . ' %' : '—'; ?></td><td><?php echo $n['wa']; ?></td></tr>
     <?php endforeach; ?></tbody>
   </table></div>
   <p class="meta nota">Las visitas y los clics en WhatsApp se cuentan una vez por móvil y charla, sin cookies ni datos personales. Un clic no garantiza que la persona se haya unido.</p>
@@ -316,6 +333,28 @@ function fecha_es($iso) {
       </dl>
     </details>
   <?php endforeach; ?>
+<?php elseif ($vistaRegs): ?>
+  <div class="bar">
+    <div><h1>Autoría<span>.</span> Inscripciones</h1><p class="meta"><?php echo count($regs); ?> inscritos<?php echo $codigo !== '' ? ' en la charla ' . $e($codigo) : ''; ?> desde el QR del flyer · los más recientes primero</p></div>
+    <div><a class="btn primary" href="/panel?csv=registros<?php echo $codigo !== '' ? '&amp;c=' . rawurlencode($codigo) : ''; ?>">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+  </div>
+  <form class="filtro" method="get" action="/panel">
+    <input type="hidden" name="vista" value="registros">
+    <label for="c" class="meta">Charla</label>
+    <select id="c" name="c" onchange="this.form.submit()">
+      <option value="">Todas</option>
+      <?php foreach ($codigosR as $k): ?><option value="<?php echo $e($k); ?>"<?php echo $k === $codigo ? ' selected' : ''; ?>><?php echo $e($k); ?></option><?php endforeach; ?>
+    </select>
+    <noscript><button class="btn" type="submit">Filtrar</button></noscript>
+  </form>
+  <?php if (!$regs): ?><p class="empty">Todavía no se ha inscrito nadie.</p><?php else: ?>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Nombre y apellidos</th><th class="izq">Correo</th><th class="izq">Asignatura</th><th>Negocio o trabajo</th><th>Charla</th><th>Fecha</th></tr></thead>
+    <tbody><?php foreach ($regs as $r): ?>
+      <tr><td><?php echo $e($r['nombre'] ?? ''); ?></td><td class="izq"><?php echo $e($r['email'] ?? ''); ?></td><td class="izq"><?php echo $e($r['asignatura'] ?? ''); ?></td><td><?php echo $e($r['negocio_o_trabajo'] ?? ''); ?></td><td><?php echo $e(($r['charla'] ?? '') ?: '—'); ?></td><td><?php echo $e(fecha_es($r['fecha'] ?? '')); ?></td></tr>
+    <?php endforeach; ?></tbody>
+  </table></div>
+  <?php endif; ?>
 <?php elseif ($vistaProps): ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Propuestas</h1><p class="meta"><?php echo count($props); ?> propuestas de valor<?php echo $codigo !== '' ? ' de la charla ' . $e($codigo) : ''; ?> · las más recientes primero</p></div>
@@ -341,7 +380,7 @@ function fecha_es($iso) {
 <?php else: ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Panel</h1><p class="meta"><?php echo count($rows); ?> registros · los más recientes primero</p></div>
-    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?vista=hoja">Hoja de Google (<?php echo count(hoja_pendientes()); ?> pendientes)</a> <a class="btn" href="/panel?vista=avisos">Avisos por email</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=registros">Inscripciones (<?php echo count($regs); ?>)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?vista=hoja">Hoja de Google (<?php echo count(hoja_pendientes()); ?> pendientes)</a> <a class="btn" href="/panel?vista=avisos">Avisos por email</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$rows): ?><p class="empty">Todavía no ha llegado ningún contacto.</p><?php endif; ?>
   <?php foreach ($rows as $r): $isD = ($r['tipo'] ?? '') === 'diagnostico'; $p = $r['perfil'] ?? []; $q = $r['respuestas'] ?? []; $c = $r['calculo'] ?? []; $res = $r['resultado'] ?? null; ?>

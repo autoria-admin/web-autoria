@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Reserve su plaza · Autoría</title>
+  <meta name="description" content="Charla de Autoría: reserve su plaza en un minuto y le escribimos antes de la charla.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#F5F2EB">
+  <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=20261109b">
+  <link rel="preload" href="/assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body class="page-charla">
+  <header class="ch-top">
+    <span class="wordmark" aria-label="Autoría">Autoría<span class="wordmark-dot" aria-hidden="true">.</span></span>
+  </header>
+
+  <main class="ch" id="ch">
+    <!-- ============ 1. FORMULARIO ============ -->
+    <section class="ch-step" data-paso="form" aria-labelledby="cr-titulo">
+      <p class="kicker">Charla de Autoría</p>
+      <h1 class="ch-title" id="cr-titulo">Reserve su <em><span class="mark">plaza<svg class="anno anno-underline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path pathLength="1" vector-effect="non-scaling-stroke" d="M2 50 C 20 25, 41 70, 61 45 S 89 35, 98 50"/><path pathLength="1" vector-effect="non-scaling-stroke" d="M12 85 C 36 62, 66 80, 92 70"/></svg></span></em>.</h1>
+      <p class="ch-lede">Cómo contar en redes lo que sabe, con su propia voz. Déjenos sus datos y le escribimos antes de la charla para recordársela.</p>
+      <p class="ch-sello">Gratis · Le escribe una persona del equipo</p>
+
+      <form class="ch-form" data-form novalidate>
+        <div class="field">
+          <label for="cr-nombre">Nombre y apellidos</label>
+          <input id="cr-nombre" name="nombre" type="text" autocomplete="name" autocapitalize="words" maxlength="120" placeholder="Nombre Apellido Apellido" required aria-describedby="cr-nombre-error">
+          <p class="ch-field-error" id="cr-nombre-error" data-error-de="nombre" hidden></p>
+        </div>
+
+        <div class="field">
+          <label for="cr-email">Su correo</label>
+          <input id="cr-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="160" placeholder="nombre@correo.com" required aria-describedby="cr-email-nota cr-email-error">
+          <p class="ch-field-note" id="cr-email-nota">Aquí le escribimos antes de la charla.</p>
+          <p class="ch-field-error" id="cr-email-error" data-error-de="email" hidden></p>
+          <p class="ch-sugerencia" data-sugerencia hidden>¿Quiso decir <strong data-sugerencia-texto></strong>? <button type="button" class="ch-edit" data-sugerencia-usar>Sí, cambiarlo</button></p>
+        </div>
+
+        <div class="field">
+          <label for="cr-asignatura">Asignatura que cursa</label>
+          <input id="cr-asignatura" name="asignatura" type="text" autocomplete="off" maxlength="160" placeholder="Por ejemplo, Dirección Estratégica" autocapitalize="sentences" required aria-describedby="cr-asignatura-nota cr-asignatura-error">
+          <p class="ch-field-note" id="cr-asignatura-nota">Así preparamos ejemplos que le sirvan.</p>
+          <p class="ch-field-error" id="cr-asignatura-error" data-error-de="asignatura" hidden></p>
+        </div>
+
+        <fieldset class="field ch-redes" data-trabajo aria-describedby="cr-trabajo-nota cr-trabajo-error">
+          <legend>¿Tiene un negocio o trabaja fuera de la universidad?</legend>
+          <div class="ch-seg ch-seg-2">
+            <label><input type="radio" name="trabajo" value="Sí" required><span>Sí</span></label>
+            <label><input type="radio" name="trabajo" value="No"><span>No</span></label>
+          </div>
+          <p class="ch-field-note" id="cr-trabajo-nota">Con esto adaptamos la charla a quienes vienen.</p>
+          <p class="ch-field-error" id="cr-trabajo-error" data-error-de="trabajo" hidden></p>
+        </fieldset>
+
+        <div class="ch-consent-campo">
+          <label class="consent" data-consent><input type="checkbox" name="consent" value="1" required aria-describedby="cr-consent-error"><span>Acepto que Autoría use estos datos para gestionar mi inscripción en la charla y contactarme, según su <a href="/privacidad.html#charlas" target="_blank" rel="noopener">política de privacidad</a>.</span></label>
+          <p class="ch-field-error" id="cr-consent-error" data-error-de="consent" hidden></p>
+        </div>
+
+        <!-- Campo trampa para robots: las personas no lo ven -->
+        <div class="hp" aria-hidden="true">
+          <label for="cr-web">No rellene este campo</label>
+          <input id="cr-web" name="web" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <p class="ch-error" data-error role="alert" hidden></p>
+        <button class="btn btn-primary btn-lg ch-btn" type="submit" data-enviar>Inscribirme</button>
+        <p class="ch-tranquilidad">Un minuto. Solo usamos sus datos para gestionar su inscripción y, si le interesa, hablar con usted. Puede pedir que los borremos en <a href="mailto:eryoncompany@gmail.com">eryoncompany@gmail.com</a>.</p>
+      </form>
+    </section>
+
+    <!-- ============ 2. GRACIAS ============ -->
+    <section class="ch-step" data-paso="final" aria-labelledby="cr-final" hidden>
+      <h1 class="ch-title ch-title-final" id="cr-final" tabindex="-1" data-final-titulo></h1>
+      <p class="ch-lede" data-final-texto></p>
+      <p class="ch-aviso" data-final-aviso role="status" aria-live="polite" hidden></p>
+      <button class="ch-edit" type="button" data-reintentar hidden>Reintentar ahora</button>
+      <button class="ch-edit" type="button" data-corregir hidden>¿El correo no es correcto? Corregirlo</button>
+    </section>
+
+    <noscript><p class="ch-note">Para usar esta página necesita activar JavaScript en su navegador.</p></noscript>
+  </main>
+
+  <script src="/lib/charla-registro.js?v=20261109b" defer></script>
+</body>
+</html>

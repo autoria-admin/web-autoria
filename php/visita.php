@@ -8,7 +8,7 @@ require __DIR__ . '/_comun.php';
 solo_post();
 $in = entrada_json();
 $pagina = clean_str($in['pagina'] ?? '', 20);
-if (!in_array($pagina, ['propuesta', 'diagnostico', 'whatsapp'], true)) json_out(['ok' => false, 'reason' => 'datos']);
+if (!in_array($pagina, ['propuesta', 'diagnostico', 'registro', 'whatsapp'], true)) json_out(['ok' => false, 'reason' => 'datos']);
 if (rate_limit('visita', 300, 1500, 10000) !== null) json_out(['ok' => false, 'reason' => 'rate']);
 $charla = codigo_charla($in['charla'] ?? '');
 $ok = contar_visita($charla, $pagina);

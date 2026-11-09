@@ -35,7 +35,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Pasos: perfil, objetivo, público, frecuencia, tiempo y cámara, calculadora, email y consentimiento, informe.
   - Perfil: capturas de cualquier red o PDF de LinkedIn, leídos con IA. Lo que no aparece se deja en blanco.
   - Informe: puntos fuertes y débiles, bio o titular propuesto, «Dónde centrarte» (1–2 redes), tres ideas de vídeo, ritmo recomendado y llamada.
-- **Charlas** — dos landings con QR en la presentación (`https://autoriaestudio.com/charla/propuesta?c=C01` y `https://autoriaestudio.com/charla/diagnostico?c=C01`): **no se cambian las rutas ni el parámetro `c`**, y los dos QR tienen que usar el mismo dominio (código de la charla: C01 es la UAM del 12/11/2026, P01 la prueba con la company del 9/11 y TEST las pruebas técnicas). No salen en el menú, llevan `noindex`, trato de usted y nada se envía solo a la persona (ni correos ni WhatsApp).
+- **Charlas** — dos landings con QR en la presentación y una de inscripción con QR en el flyer (`https://autoriaestudio.com/charla/propuesta?c=C01` y `https://autoriaestudio.com/charla/diagnostico?c=C01`): **no se cambian las rutas ni el parámetro `c`**, y los dos QR tienen que usar el mismo dominio (código de la charla: C01 es la UAM del 12/11/2026, P01 la prueba con la company del 9/11 y TEST las pruebas técnicas). No salen en el menú, llevan `noindex`, trato de usted y nada se envía solo a la persona (ni correos ni WhatsApp).
 - **`charla-propuesta.html` + `lib/charla.js`** — dinámica, en `/charla/propuesta?c=C01`.
   - «Su propuesta de valor.», «Complete la frase. No tiene que quedar perfecta.», tres campos con su palabra delante (Para, aporto, gracias a), el ejemplo completo de la lámina, «Listo» y «Es anónima…».
   - Lo que escriben se guarda en el móvil en cada tecla (`autoria_propuesta_borrador`).
@@ -48,6 +48,12 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Guarda en `/api/charla-diagnostico` (`php/charla-diagnostico.php`) y avisa al equipo por email. El id se genera al cargar el formulario y se guarda en `autoria_diagnostico_envio`: un doble toque, una recarga o un reintento con los mismos datos no duplican nada; si cambian los datos, es un envío nuevo. La fecha va en ISO con la zona horaria del móvil.
   - Tras enviar: «Recibido.», «Mañana le llega a {correo}…» y la comunidad «Firma lo que sabes Autoría» con el botón «Unirme a la comunidad».
   - Sin conexión: «Casi listo» y cola en `autoria_diagnostico_cola`; «Listo» y el recuadro «Último paso» con el botón de la comunidad de WhatsApp solo cuando el envío llega. Unirse **no es obligatorio** (decisión del 03/11/2026: se envía primero el correo y la comunidad es el último paso destacado). Los clics en el botón se cuentan por charla.
+- **`charla-registro.html` + `lib/charla-registro.js`** — inscripción desde el QR del flyer, en `/charla/registro?c=C01`.
+  - Textos con la misma revisión MECLABS que las otras dos: «Reserve su plaza.», «Gratis · Le escribe una persona del equipo», una ayuda bajo cada pregunta que explica para qué se pide y «Un minuto. Solo usamos sus datos…» bajo el botón.
+  - Campos: nombre y apellidos, correo (con «¿Quiso decir…?»), asignatura que cursa, «¿Tiene un negocio o trabaja fuera de la universidad?» (Sí/No) y consentimiento; campo trampa `web`. Sin enlace a la comunidad de WhatsApp.
+  - Guarda en `/api/charla-registro` (`php/charla-registro.php`, tipo `charla-registro`) y avisa al equipo por email. **No se copia en la hoja de Google**: su Apps Script solo acepta `diagnostico`, `propuesta` y `contadores`.
+  - Mismo sistema de id y cola que el diagnóstico (`autoria_registro_envio` y `autoria_registro_cola`). Tras enviar: «Plaza reservada.», «Le escribiremos a {correo} antes de la charla» y «¿El correo no es correcto? Corregirlo» (corregir crea un envío nuevo; el anterior sigue en el panel). El recordatorio lo manda una persona.
+  - Se ve en `/panel?vista=registros`, filtrable por código y con CSV; las visitas (`registro`) y los inscritos salen también en `/panel?vista=charlas`.
 - **Medición de las charlas:** `/api/visita` (`php/visita.php`) cuenta una visita por móvil, página y código, sin cookies ni IP, en `autoria-privado/visitas.json`. El panel (`/panel?vista=charlas`) muestra visitas, propuestas y diagnósticos pedidos por código, y el CSV de las solicitudes.
 - **`main.js`** — efectos y comportamiento de la portada:
   - anotaciones a mano (`data-mark` circle, underline, strike o tick), que el JS reescala al tamaño real;
@@ -61,9 +67,9 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Páginas legales:** `privacidad.html`, `aviso-legal.html` y `creditos.html`.
 - **`php/`** — la parte de servidor en Hostinger:
   - `_comun.php`: utilidades, Gemini, límites de uso y guardado;
-  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `charla-diagnostico.php`, `visita.php`, `charla.php`, `panel.php` e `instalar.php`.
+  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `charla-diagnostico.php`, `charla-registro.php`, `visita.php`, `charla.php`, `panel.php` e `instalar.php`.
 - **`.htaccess`:**
-  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta|charla-diagnostico|visita)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/(propuesta|diagnostico)` en `php/charla.php`, que sirve `charla-*.html` con `styles.css` dentro de la página (una petición menos: con «3G», el formulario aparece unos 5 s antes);
+  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta|charla-diagnostico|charla-registro|visita)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/(propuesta|diagnostico|registro)` en `php/charla.php`, que sirve `charla-*.html` con `styles.css` dentro de la página (una petición menos: con «3G», el formulario aparece unos 5 s antes);
   - bloquea `php/`, `api/`, `tools/`, `.git`, los archivos que empiezan por punto, `*.md` y los `*.json` de configuración.
 - **`api/_conocimiento.js`, `api/_diagnostico.js` y `api/_lector-perfil.js`** — **fuente única** de las indicaciones de la IA. PHP las lee con `texto_js()`, que busca `` const NOMBRE = `…`; `` o `` export default `…`; ``. Por eso esos textos no pueden llevar comillas invertidas dentro.
   - Si cambian los campos del diagnóstico o del lector, hay que tocar **a la vez** `api/_*.js`, `php/*.php` y `lib/diagnostico.js`.
