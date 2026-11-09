@@ -1305,27 +1305,22 @@ body::before {
 }
 [data-paso="final"] .ch-edit { display: block; margin: 1rem auto 0; }
 [data-paso="final"] .ch-edit[hidden] { display: none; }
-/* paso obligatorio antes de enviar: unirse a la comunidad */
-.ch-comunidad {
-  display: grid; gap: .9rem; margin-top: .3rem; padding: 1.3rem 1.15rem 1.15rem;
-  border: 1px solid var(--ink); border-radius: var(--radius); background: rgba(255,255,255,.55);
-  transition: border-color .3s, box-shadow .3s;
+/* final: la comunidad de WhatsApp (voluntaria), con el verde y el logo de WhatsApp para que se reconozca */
+.ch-whatsapp {
+  display: grid; gap: .9rem; margin: .2rem 0 1.1rem; padding: 1.3rem 1.15rem 1.15rem;
+  border: 1px solid var(--line-2); border-radius: var(--radius); background: rgba(255,255,255,.55);
 }
-.page-charla .ch-comunidad .kicker { color: var(--accent-ink); }
-.ch-comunidad-texto { font-family: var(--serif); font-size: clamp(1.2rem, 1.08rem + .7vw, 1.42rem); line-height: 1.32; }
-.ch-comunidad.is-invalid { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.ch-comunidad.is-hecho { border-color: var(--line-2); }
-.ch-comunidad-hecho { display: grid; justify-items: start; gap: .1rem; }
-.ch-comunidad-ok { display: flex; align-items: center; gap: .6rem; font-size: 1.05rem; font-weight: 600; }
-.ch-check { flex: none; width: 26px; height: 26px; overflow: visible; fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
-.ch-check path { stroke-dasharray: 1; animation: chDraw .6s var(--ease-in-out) .1s both; }
-.ch-comunidad-hecho .ch-edit { display: inline-flex; align-items: center; padding-inline: 0; text-align: left; }
-.ch-btn-wa { min-height: 64px; padding-inline: 1rem; font-size: 1.05rem; white-space: normal; text-align: center; }
-/* el botón de enviar, apagado hasta que se pulsa el de la comunidad (sigue pudiéndose pulsar) */
-.btn.ch-btn[aria-disabled="true"],
-.btn.ch-btn[aria-disabled="true"]:hover,
-.btn.ch-btn[aria-disabled="true"]:focus-visible { background: transparent; color: var(--ink-mute); border-color: var(--line-2); }
-.btn.ch-btn[aria-disabled="true"]::before { display: none; }
+.ch-whatsapp[hidden] { display: none; }
+.ch-whatsapp-texto { font-family: var(--serif); font-size: clamp(1.3rem, 1.12rem + .9vw, 1.6rem); line-height: 1.24; letter-spacing: -0.01em; }
+.ch-whatsapp-nota { font-size: .88rem; line-height: 1.45; color: var(--ink-mute); }
+.btn.ch-btn-wa {
+  min-height: 64px; padding-inline: 1rem; gap: .7rem;
+  font-size: 1.12rem; white-space: normal; text-align: center;
+  background: #25D366; border-color: #25D366; color: var(--ink);   /* verde de WhatsApp; texto oscuro para que se lea bien */
+}
+.btn.ch-btn-wa::before { background: #1DA851; }
+.btn.ch-btn-wa:hover, .btn.ch-btn-wa:focus-visible { color: var(--ink); border-color: #1DA851; }
+.ch-wa-logo { flex: none; width: 28px; height: 28px; fill: currentColor; }
 
 /* final: la agenda, destacada */
 .ch-agenda {
@@ -1346,4 +1341,4 @@ body::before {
   from { box-shadow: 0 0 0 0 rgba(233, 68, 31, .65); }
   to   { box-shadow: 0 0 0 18px rgba(233, 68, 31, 0); }
 }
-@media (prefers-reduced-motion: reduce) { .ch-btn-agenda, .ch-check path { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ch-btn-agenda { animation: none; } }
