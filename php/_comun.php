@@ -402,7 +402,13 @@ function hoja_reintentar($max = 20, $segundos = 15) {
   foreach (array_slice(hoja_pendientes(), 0, $max, true) as $id => $p) {
     if (microtime(true) - $t0 > $segundos) break;
     $err = hoja_post($p['datos']);
-    if ($err !== '') { hoja_marcar_pendiente($p['datos'], $err); break; }
+    if ($err !== '') {
+      hoja_marcar_pendiente($p['datos'], $err);
+      // Si el script aún no acepta ese tipo (p. ej. «registro» antes de publicar su
+      // versión nueva), se sigue con los demás; cualquier otro fallo para el reenvío.
+      if (strpos($err, '«tipo»') !== false) continue;
+      break;
+    }
     hoja_quitar_pendiente((string) $id);
     $res['enviados']++;
   }
@@ -414,7 +420,7 @@ function hoja_reintentar($max = 20, $segundos = 15) {
 // Totales de una charla para la pestaña Contadores de la hoja.
 function hoja_totales($charla) {
   $v = leer_visitas()[$charla] ?? [];
-  return ['visitas_propuesta' => (int) ($v['propuesta'] ?? 0), 'visitas_diagnostico' => (int) ($v['diagnostico'] ?? 0), 'clics_comunidad' => (int) ($v['whatsapp'] ?? 0)];
+  return ['visitas_propuesta' => (int) ($v['propuesta'] ?? 0), 'visitas_diagnostico' => (int) ($v['diagnostico'] ?? 0), 'clics_comunidad' => (int) ($v['whatsapp'] ?? 0), 'visitas_registro' => (int) ($v['registro'] ?? 0)];
 }
 
 // Envía los contadores de una charla, como mucho una vez por minuto y solo si han
@@ -470,16 +476,20 @@ function notify_team($asunto, array $row) {
     $texto .= str_pad($k, 16) . ': ' . ($v === null || $v === '' ? '—' : $v) . "\n";
   }
   $cfg = config();
-  if (!empty($cfg['smtp_user']) && !empty($cfg['smtp_pass'])) return smtp_gmail($cfg['smtp_user'], $cfg['smtp_pass'], $to, $asunto, $texto) === '';
+  if (!empty($cfg['smtp_user']) && !empty($cfg['smtp_pass'])) return smtp_gmail($cfg['smtp_user'], $cfg['smtp_pass'], $to, $asunto, $texto, smtp_servidor()) === '';
   if (!function_exists('mail')) return false;
   $host = preg_replace('/[^a-z0-9.\-]/i', '', preg_replace('/^www\./', '', $_SERVER['HTTP_HOST'] ?? 'autoria'));
   $cab = 'From: Autoria <no-reply@' . $host . ">\r\nContent-Type: text/plain; charset=utf-8";
   return @mail($to, '=?UTF-8?B?' . base64_encode($asunto) . '?=', $texto, $cab);
 }
 
+// Servidor de correo: el de Gmail. Solo en las pruebas en local se cambia con
+// «smtp_servidor» en config.php (p. ej. tcp://127.0.0.1:2525, un servidor falso).
+function smtp_servidor() { return (string) (config()['smtp_servidor'] ?? '') ?: 'ssl://smtp.gmail.com:465'; }
+
 // Envío mínimo por el SMTP de Gmail (SSL, puerto 465) con una contraseña de aplicación.
 // Devuelve '' si se envió o un texto corto con el motivo del fallo.
-function smtp_gmail($user, $pass, $to, $asunto, $texto, $servidor = 'ssl://smtp.gmail.com:465') {
+function smtp_gmail($user, $pass, $to, $asunto, $texto, $servidor = 'ssl://smtp.gmail.com:465', $deNombre = 'Autoria') {
   $fp = @stream_socket_client($servidor, $errno, $errstr, 10);
   if (!$fp) return 'sin conexión con smtp.gmail.com (' . $errstr . ')';
   stream_set_timeout($fp, 10);
@@ -494,7 +504,8 @@ function smtp_gmail($user, $pass, $to, $asunto, $texto, $servidor = 'ssl://smtp.
     return substr($r, 0, 3) === $espera ? '' : trim($r);
   };
   $cuerpo = preg_replace('/^\./m', '..', str_replace("\n", "\r\n", $texto));
-  $msg = 'From: Autoria <' . $user . ">\r\n" . 'To: <' . $to . ">\r\n"
+  $de = preg_match('/^[\x20-\x7E]*$/', $deNombre) ? $deNombre : '=?UTF-8?B?' . base64_encode($deNombre) . '?=';
+  $msg = 'From: ' . $de . ' <' . $user . ">\r\n" . 'To: <' . $to . ">\r\n"
     . 'Subject: =?UTF-8?B?' . base64_encode($asunto) . "?=\r\n" . 'Date: ' . date('r') . "\r\n"
     . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" . $cuerpo . "\r\n.";
   $pasos = [[null, '220'], ['EHLO autoria', '250'], ['AUTH LOGIN', '334'], [base64_encode($user), '334'], [base64_encode($pass), '235'],
@@ -505,4 +516,97 @@ function smtp_gmail($user, $pass, $to, $asunto, $texto, $servidor = 'ssl://smtp.
   }
   fwrite($fp, "QUIT\r\n"); fclose($fp);
   return '';
+}
+
+
+/* ---------- correos a las personas que se inscriben en una charla ----------
+   Excepción a «nada se envía solo» (decisión del 09/11/2026): quien se inscribe
+   desde el QR del flyer recibe al momento la confirmación de su plaza. El
+   recordatorio lo lanza el equipo desde /panel?vista=registros, con la fecha,
+   la hora y el lugar que escriba allí. Se envían por el Gmail de los avisos.
+   Registro de envíos (por id de inscripción): autoria-privado/correos-registro.json */
+const CHARLA_NOMBRE = 'Firma lo que sabes';
+
+// Envía un correo de texto a una persona. Devuelve '' si salió o el motivo del fallo.
+function enviar_correo($to, $asunto, $texto) {
+  if (!es_email($to)) return 'correo no válido';
+  // Los dominios reservados para pruebas (prueba@example.com) no se envían.
+  if (preg_match('/@(.+\.)?example\.(com|org|net)$/i', $to)) return 'omitido: correo de prueba';
+  $cfg = config();
+  if (!empty($cfg['smtp_user']) && !empty($cfg['smtp_pass'])) return smtp_gmail($cfg['smtp_user'], $cfg['smtp_pass'], $to, $asunto, $texto, smtp_servidor(), 'Autoría');
+  if (!function_exists('mail')) return 'el servidor no puede enviar correo';
+  $host = preg_replace('/[^a-z0-9.\-]/i', '', preg_replace('/^www\./', '', $_SERVER['HTTP_HOST'] ?? 'autoria'));
+  $cab = 'From: =?UTF-8?B?' . base64_encode('Autoría') . '?= <no-reply@' . $host . ">\r\nContent-Type: text/plain; charset=utf-8";
+  return @mail($to, '=?UTF-8?B?' . base64_encode($asunto) . '?=', $texto, $cab) ? '' : 'el servidor no pudo enviarlo';
+}
+
+// Registro de correos enviados a los inscritos: id => [confirmacion|recordatorio => [ok, fecha, error]].
+function correos_registro(?callable $cambio = null) {
+  $dir = dir_privado();
+  if ($dir === '') return [];
+  $fp = @fopen($dir . '/correos-registro.json', 'c+');
+  if (!$fp) return [];
+  flock($fp, $cambio ? LOCK_EX : LOCK_SH);
+  $d = json_decode((string) stream_get_contents($fp), true);
+  if (!is_array($d)) $d = [];
+  if ($cambio) {
+    $d = $cambio($d);
+    ftruncate($fp, 0); rewind($fp);
+    fwrite($fp, json_encode($d, JSON_UNESCAPED_UNICODE));
+    fflush($fp);
+  }
+  flock($fp, LOCK_UN); fclose($fp);
+  return $d;
+}
+
+// Fecha, hora y lugar de cada charla (texto que sigue a «Le esperamos…»), en config.php.
+function charla_info($charla) {
+  $info = config()['charlas_info'] ?? [];
+  return is_array($info) ? trim((string) ($info[$charla] ?? '')) : '';
+}
+
+function texto_correo_registro($clase, array $r) {
+  $nombre = trim(strtok((string) ($r['nombre'] ?? ''), ' ') ?: '');
+  $nombre = mb_strtoupper(mb_substr($nombre, 0, 1)) . mb_substr($nombre, 1);
+  $info = charla_info((string) ($r['charla'] ?? ''));
+  $saludo = 'Hola' . ($nombre !== '' ? ', ' . $nombre : '') . ":\n\n";
+  $pie = "\n\nSi no se ha inscrito usted o quiere que borremos sus datos, responda a este correo o escriba a eryoncompany@gmail.com.\n\nUn saludo,\nAutoría\nhttps://autoriaestudio.com\n";
+  if ($clase === 'recordatorio') {
+    return ['Recordatorio: charla «' . CHARLA_NOMBRE . '»',
+      $saludo . 'Le recordamos que tiene plaza en la charla «' . CHARLA_NOMBRE . '», de Autoría.' . ($info !== '' ? "\n\nLe esperamos " . rtrim($info, '.') . '.' : '') . $pie];
+  }
+  return ['Plaza reservada: charla «' . CHARLA_NOMBRE . '»',
+    $saludo . 'Su plaza en la charla «' . CHARLA_NOMBRE . '», de Autoría, está reservada.' . ($info !== '' ? "\n\nLe esperamos " . rtrim($info, '.') . '.' : '')
+    . "\n\nAntes de la charla le enviaremos un recordatorio a este correo." . $pie];
+}
+
+// Envía la confirmación o el recordatorio de una inscripción y lo apunta en el registro.
+function enviar_correo_registro($clase, array $r) {
+  [$asunto, $texto] = texto_correo_registro($clase, $r);
+  $err = enviar_correo((string) ($r['email'] ?? ''), $asunto, $texto);
+  correos_registro(function ($d) use ($r, $clase, $err) {
+    $id = (string) $r['id'];
+    $d[$id]['email'] = strtolower((string) ($r['email'] ?? ''));
+    $d[$id]['charla'] = (string) ($r['charla'] ?? '');
+    $d[$id][$clase] = ['ok' => $err === '', 'fecha' => ahora(), 'error' => $err];
+    return $d;
+  });
+  return $err;
+}
+
+// Para que nadie use el formulario para mandar correos en masa desde el Gmail de
+// Autoría (que admite unos 500 al día, avisos al equipo incluidos): una sola
+// confirmación por correo y charla, y como mucho 250 confirmaciones al día.
+// Devuelve '' si se puede enviar o el motivo para no hacerlo.
+function confirmacion_permitida(array $r) {
+  $email = strtolower((string) ($r['email'] ?? ''));
+  $hoy = gmdate('Y-m-d');
+  $n = 0;
+  foreach (correos_registro() as $e) {
+    $c = $e['confirmacion'] ?? null;
+    if (!$c || empty($c['ok'])) continue;
+    if (($e['email'] ?? '') === $email && ($e['charla'] ?? '') === (string) ($r['charla'] ?? '')) return 'ya se le envió la confirmación';
+    if (strpos((string) ($c['fecha'] ?? ''), $hoy) === 0) $n++;
+  }
+  return $n >= 250 ? 'límite diario de confirmaciones' : '';
 }

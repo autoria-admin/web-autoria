@@ -1,9 +1,8 @@
 <?php
 // charla-registro.php (se abre como /api/charla-registro) — guarda la
 // inscripción a una charla que se hace desde el QR del flyer
-// (charla-registro.html) y avisa al equipo por email. A la persona no se le
-// envía nada automático. No se copia en la hoja de Google: su Apps Script
-// solo acepta los formatos diagnostico, propuesta y contadores.
+// (charla-registro.html), envía a la persona la confirmación de su plaza, la
+// copia en la pestaña Inscripciones de la hoja de Google y avisa al equipo.
 define('AUTORIA', 1);
 require __DIR__ . '/_comun.php';
 
@@ -39,12 +38,35 @@ $row = [
   'asignatura' => $asignatura, 'negocio_o_trabajo' => $trabajo,
   'consentimiento' => 'Sí (' . $fecha . '): usar estos datos para gestionar su inscripción en la charla y contactarle',
 ];
+$hoja = [
+  'tipo' => 'registro', 'id' => $id, 'fecha' => $fecha, 'charla' => $row['charla'], 'nombre' => $nombre,
+  'correo' => $email, 'asignatura' => $asignatura, 'negocio_o_trabajo' => $trabajo, 'consentimiento' => true,
+];
 $asunto = 'Inscripción a charla — ' . ($row['charla'] ?: 'sin código') . ' — ' . $email;
 
+// Primero se guarda y se contesta al móvil; la confirmación, la hoja y el aviso van después.
 if (store_record($row)) {
   json_out_y_seguir(['ok' => true]);
+  confirmar($row);
+  hoja_registrar($hoja);
+  hoja_contadores($row['charla']);
   notify_team($asunto, $row);
   exit;
 }
-// Si no se pudo guardar en el servidor, al menos que llegue el aviso por correo.
-json_out(['ok' => notify_team($asunto, $row)]);
+// Si no se pudo guardar en el servidor, solo vale si llega a la hoja o al correo del equipo.
+$ok = hoja_post($hoja) === '';
+$ok = notify_team($asunto, $row) || $ok;
+if (!$ok) json_out(['ok' => false]);
+json_out_y_seguir(['ok' => true]);
+confirmar($row);
+exit;
+
+// Confirmación de la plaza a la persona (una por correo y charla, con tope diario).
+function confirmar(array $row) {
+  $motivo = confirmacion_permitida($row);
+  if ($motivo === '') { enviar_correo_registro('confirmacion', $row); return; }
+  correos_registro(function ($d) use ($row, $motivo) {
+    $d[$row['id']] = ['email' => strtolower($row['email']), 'charla' => $row['charla'], 'confirmacion' => ['ok' => false, 'fecha' => ahora(), 'error' => 'no enviada: ' . $motivo]];
+    return $d;
+  });
+}

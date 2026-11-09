@@ -5,6 +5,24 @@
 define('AUTORIA', 1);
 require __DIR__ . '/_comun.php';
 
+// Inscripciones de una charla, una por correo (la más reciente), que aún no han
+// recibido la confirmación o el recordatorio. Los correos de prueba (example.com) no cuentan.
+function correos_por_enviar($charla, $clase) {
+  $log = correos_registro();
+  $hecho = [];
+  foreach ($log as $e) if (!empty($e[$clase]['ok']) && ($e['charla'] ?? '') === $charla) $hecho[$e['email'] ?? ''] = true;
+  $out = []; $vistos = [];
+  foreach (read_records() as $r) {   // los más recientes primero
+    if (($r['tipo'] ?? '') !== 'charla-registro' || ($r['charla'] ?? '') !== $charla) continue;
+    $em = strtolower((string) ($r['email'] ?? ''));
+    if (isset($vistos[$em]) || isset($hecho[$em])) continue;
+    $vistos[$em] = true;
+    if (preg_match('/@(.+\.)?example\.(com|org|net)$/i', $em)) continue;
+    $out[] = $r;
+  }
+  return $out;
+}
+
 header('X-Robots-Tag: noindex, nofollow');
 header('X-Frame-Options: DENY');
 header('Cache-Control: no-store');
@@ -22,6 +40,8 @@ if (isset($_GET['salir'])) { $_SESSION = []; session_destroy(); header('Location
 // Tras iniciar sesión se vuelve a la vista pedida (p. ej. /panel?vista=hoja), solo si es una de las del panel.
 $vistaPedida = (string) ($_GET['vista'] ?? '');
 $volver = in_array($vistaPedida, ['hoja', 'charlas', 'propuestas', 'registros', 'avisos'], true) ? '/panel?vista=' . $vistaPedida : '/panel';
+$cPedido = codigo_charla(str_replace(' ', '_', (string) ($_GET['c'] ?? '')));   // también la charla elegida, si la hay
+if ($volver !== '/panel' && $cPedido !== '') $volver .= '&c=' . rawurlencode(($_GET['c'] ?? '') === 'SIN CÓDIGO' ? 'SIN CÓDIGO' : $cPedido);
 
 // Ajustes de los avisos por email (solo con la sesión iniciada).
 $avisoMsg = '';
@@ -53,6 +73,34 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !empty($_SESSION['ok']) && 
       $_SESSION['hoja_msg'] = $err === '' ? ['ok', 'Guardado. La hoja responde y el token es correcto.'] : ['err', 'Guardado, pero la prueba ha fallado: ' . $err . '.'];
     }
     header('Location: /panel?vista=hoja', true, 303); exit;
+  } elseif ($_POST['accion'] === 'info_charla') {
+    // Fecha, hora y lugar de una charla: va en la confirmación y en el recordatorio («Le esperamos …»).
+    $cod = codigo_charla($_POST['c'] ?? '');
+    $txt = preg_replace('/\s+/u', ' ', clean_str($_POST['info'] ?? '', 200));
+    $info = config()['charlas_info'] ?? [];
+    if (!is_array($info)) $info = [];
+    if ($txt === '') unset($info[$cod]); else $info[$cod] = $txt;
+    $_SESSION['reg_msg'] = guardar_config(['charlas_info' => $info]) ? ['ok', 'Guardado.'] : ['err', 'No se pudo guardar la configuración.'];
+    header('Location: /panel?vista=registros&c=' . rawurlencode($cod ?: 'SIN CÓDIGO'), true, 303); exit;
+  } elseif ($_POST['accion'] === 'correos_registro') {
+    // Envía la tanda siguiente de confirmaciones pendientes o del recordatorio de una charla.
+    @set_time_limit(120);
+    $cod = codigo_charla($_POST['c'] ?? '');
+    $clase = ($_POST['clase'] ?? '') === 'recordatorio' ? 'recordatorio' : 'confirmacion';
+    if ($clase === 'recordatorio' && charla_info($cod) === '') $_SESSION['reg_msg'] = ['err', 'Antes de enviar el recordatorio, escriba la fecha, la hora y el lugar de la charla.'];
+    else {
+      $faltan = correos_por_enviar($cod, $clase);
+      $hechos = 0; $fallos = []; $t0 = microtime(true);
+      foreach (array_slice($faltan, 0, 25) as $r) {
+        if (microtime(true) - $t0 > 50) break;
+        $err = enviar_correo_registro($clase, $r);
+        if ($err === '') $hechos++; else $fallos[] = $r['email'] . ': ' . $err;
+      }
+      $quedan = count(correos_por_enviar($cod, $clase));
+      $nombre = $clase === 'recordatorio' ? 'Recordatorios' : 'Confirmaciones';
+      $_SESSION['reg_msg'] = [$fallos ? 'err' : 'ok', $nombre . ' enviados: ' . $hechos . '.' . ($quedan ? ' Quedan ' . $quedan . ': vuelva a pulsar el botón.' : '') . ($fallos ? ' No se pudieron enviar: ' . implode(' · ', array_slice($fallos, 0, 5)) . '.' : '')];
+    }
+    header('Location: /panel?vista=registros&c=' . rawurlencode($cod ?: 'SIN CÓDIGO'), true, 303); exit;
   } elseif ($_POST['accion'] === 'reenviar_hoja') {
     // Reenvío a mano: todos los pendientes que quepan en un minuto y los contadores de cada charla.
     @set_time_limit(120);
@@ -275,7 +323,7 @@ function fecha_es($iso) {
   <div class="tabla-wrap"><table class="tabla">
     <thead><tr><th>Envío</th><th>Charla</th><th>Fecha</th><th>Intentos</th><th>Último error</th></tr></thead>
     <tbody><?php foreach (array_reverse($pendH, true) as $id => $p): $dt = $p['datos'] ?? []; ?>
-      <tr><td><?php echo $e(($dt['tipo'] ?? '') === 'diagnostico' ? 'Diagnóstico · ' . ($dt['correo'] ?? '') : 'Propuesta (anónima)'); ?></td><td><?php echo $e(($dt['charla'] ?? '') ?: '—'); ?></td><td><?php echo $e(fecha_es($dt['fecha'] ?? '')); ?></td><td><?php echo (int) ($p['intentos'] ?? 0); ?></td><td class="izq"><?php echo $e($p['error'] ?? ''); ?></td></tr>
+      <tr><td><?php echo $e(($dt['tipo'] ?? '') === 'diagnostico' ? 'Diagnóstico · ' . ($dt['correo'] ?? '') : (($dt['tipo'] ?? '') === 'registro' ? 'Inscripción · ' . ($dt['correo'] ?? '') : 'Propuesta (anónima)')); ?></td><td><?php echo $e(($dt['charla'] ?? '') ?: '—'); ?></td><td><?php echo $e(fecha_es($dt['fecha'] ?? '')); ?></td><td><?php echo (int) ($p['intentos'] ?? 0); ?></td><td class="izq"><?php echo $e($p['error'] ?? ''); ?></td></tr>
     <?php endforeach; ?></tbody>
   </table></div>
   <?php else: ?><p class="meta">No hay ninguno.</p><?php endif; ?>
@@ -284,7 +332,7 @@ function fecha_es($iso) {
   <?php $codH = array_values(array_filter(array_map('strval', array_keys(leer_visitas())), 'strlen')); sort($codH); ?>
   <?php if ($codH): ?>
   <div class="tabla-wrap"><table class="tabla">
-    <thead><tr><th>Charla</th><th>Ahora (dinámica · diagnóstico · comunidad)</th><th>En la hoja</th><th>Enviados</th><th>Último error</th></tr></thead>
+    <thead><tr><th>Charla</th><th>Ahora (dinámica · diagnóstico · comunidad · inscripción)</th><th>En la hoja</th><th>Enviados</th><th>Último error</th></tr></thead>
     <tbody><?php foreach ($codH as $k): $t = hoja_totales($k); $h = $contH[$k] ?? []; $en = $h['enviados'] ?? null; ?>
       <tr><td><?php echo $e($k); ?></td><td><?php echo implode(' · ', $t); ?></td><td><?php echo $en ? implode(' · ', array_map('intval', $en)) : '—'; ?></td><td><?php echo $e(!empty($h['enviado_en']) ? fecha_es($h['enviado_en']) : '—'); ?></td><td class="izq"><?php echo $e($h['error'] ?? ''); ?></td></tr>
     <?php endforeach; ?></tbody>
@@ -347,11 +395,34 @@ function fecha_es($iso) {
     </select>
     <noscript><button class="btn" type="submit">Filtrar</button></noscript>
   </form>
-  <?php if (!$regs): ?><p class="empty">Todavía no se ha inscrito nadie.</p><?php else: ?>
+  <?php $msgR = $_SESSION['reg_msg'] ?? null; unset($_SESSION['reg_msg']); if ($msgR): ?><p class="<?php echo $msgR[0] === 'ok' ? 'okmsg' : 'err'; ?>"><?php echo $e($msgR[1]); ?></p><?php endif; ?>
+  <?php if ($codigo === ''): ?>
+    <p class="meta nota">La confirmación de la plaza se envía sola al inscribirse. Para escribir la fecha, la hora y el lugar o enviar el recordatorio, elija una charla.</p>
+  <?php else: $codR = $codigo === 'SIN CÓDIGO' ? '' : $codigo; $infoR = charla_info($codR); $faltaC = count(correos_por_enviar($codR, 'confirmacion')); $faltaR = count(correos_por_enviar($codR, 'recordatorio')); ?>
+  <div class="card">
+    <h2>Correos de la charla <?php echo $e($codigo); ?></h2>
+    <p class="meta">Se envían desde <?php echo $e((config()['smtp_user'] ?? '') ?: 'el servidor (sin Gmail configurado en «Avisos por email» pueden acabar en spam)'); ?>. Una persona recibe cada correo una sola vez aunque se haya inscrito dos veces.</p>
+    <form class="login ajustes" method="post" action="/panel?vista=registros&amp;c=<?php echo rawurlencode($codigo); ?>">
+      <input type="hidden" name="accion" value="info_charla"><input type="hidden" name="c" value="<?php echo $e($codR); ?>">
+      <label for="info" class="meta">Fecha, hora y lugar. Se lee «Le esperamos …» en la confirmación y en el recordatorio</label>
+      <input id="info" name="info" type="text" maxlength="200" value="<?php echo $e($infoR); ?>" placeholder="el jueves 12 de noviembre, a las 17:00, en el aula 3">
+      <button class="btn" type="submit">Guardar</button>
+    </form>
+    <p class="meta">Confirmaciones sin enviar: <strong><?php echo $faltaC; ?></strong> · Recordatorios por enviar: <strong><?php echo $faltaR; ?></strong></p>
+    <div class="filtro">
+      <?php if ($faltaC): ?><form method="post" action="/panel?vista=registros&amp;c=<?php echo rawurlencode($codigo); ?>"><input type="hidden" name="accion" value="correos_registro"><input type="hidden" name="c" value="<?php echo $e($codR); ?>"><input type="hidden" name="clase" value="confirmacion"><button class="btn" type="submit">Reenviar confirmaciones (<?php echo $faltaC; ?>)</button></form><?php endif; ?>
+      <?php if ($faltaR): ?><form method="post" action="/panel?vista=registros&amp;c=<?php echo rawurlencode($codigo); ?>" onsubmit="return confirm('¿Enviar el recordatorio a <?php echo $faltaR; ?> inscritos?')"><input type="hidden" name="accion" value="correos_registro"><input type="hidden" name="c" value="<?php echo $e($codR); ?>"><input type="hidden" name="clase" value="recordatorio"><button class="btn primary" type="submit"<?php echo $infoR === '' ? ' disabled title="Primero escriba la fecha, la hora y el lugar"' : ''; ?>>Enviar recordatorio (<?php echo $faltaR; ?>)</button></form><?php endif; ?>
+    </div>
+    <p class="meta">Se envían como mucho 25 por pulsación; si quedan más, vuelva a pulsar.</p>
+  </div>
+  <?php endif; ?>
+  <?php if (!$regs): ?><p class="empty">Todavía no se ha inscrito nadie.</p><?php else: $logR = correos_registro();
+    $estado = function ($id, $clase) use ($logR) { $c = $logR[$id][$clase] ?? null; if (!$c) return '—'; if (!empty($c['ok'])) return 'Enviado ' . fecha_es($c['fecha'] ?? ''); $err = (string) ($c['error'] ?? '');
+      if (strpos($err, 'ya se le envió') !== false) return 'No hacía falta: ya la tenía'; if (strpos($err, 'omitido') === 0) return 'Omitido: correo de prueba'; return 'Falló: ' . $err; }; ?>
   <div class="tabla-wrap"><table class="tabla">
-    <thead><tr><th>Nombre y apellidos</th><th class="izq">Correo</th><th class="izq">Asignatura</th><th>Negocio o trabajo</th><th>Charla</th><th>Fecha</th></tr></thead>
-    <tbody><?php foreach ($regs as $r): ?>
-      <tr><td><?php echo $e($r['nombre'] ?? ''); ?></td><td class="izq"><?php echo $e($r['email'] ?? ''); ?></td><td class="izq"><?php echo $e($r['asignatura'] ?? ''); ?></td><td><?php echo $e($r['negocio_o_trabajo'] ?? ''); ?></td><td><?php echo $e(($r['charla'] ?? '') ?: '—'); ?></td><td><?php echo $e(fecha_es($r['fecha'] ?? '')); ?></td></tr>
+    <thead><tr><th>Nombre y apellidos</th><th class="izq">Correo</th><th class="izq">Asignatura</th><th>Negocio o trabajo</th><th>Charla</th><th>Fecha</th><th class="izq">Confirmación</th><th class="izq">Recordatorio</th></tr></thead>
+    <tbody><?php foreach ($regs as $r): $idR = (string) ($r['id'] ?? ''); ?>
+      <tr><td><?php echo $e($r['nombre'] ?? ''); ?></td><td class="izq"><?php echo $e($r['email'] ?? ''); ?></td><td class="izq"><?php echo $e($r['asignatura'] ?? ''); ?></td><td><?php echo $e($r['negocio_o_trabajo'] ?? ''); ?></td><td><?php echo $e(($r['charla'] ?? '') ?: '—'); ?></td><td><?php echo $e(fecha_es($r['fecha'] ?? '')); ?></td><td class="izq"><?php echo $e($estado($idR, 'confirmacion')); ?></td><td class="izq"><?php echo $e($estado($idR, 'recordatorio')); ?></td></tr>
     <?php endforeach; ?></tbody>
   </table></div>
   <?php endif; ?>
