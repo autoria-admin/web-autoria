@@ -10,7 +10,10 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 
 ## Dónde está publicada
 
-- **Hostinger, plan Business.** El sitio es `silver-alligator-184608.hostingersite.com`, un dominio temporal; el dominio definitivo está pendiente.
+- **Hostinger, plan Business.** El sitio es **`autoriaestudio.com`** desde el 9/11/2026 (DNS de Hostinger, certificado SSL de Hostinger).
+  - `www.autoriaestudio.com` redirige a `autoriaestudio.com` (regla en `.htaccess`).
+  - La redirección de http a https se activa con «Forzar HTTPS» en hPanel, no en `.htaccess`: detrás de la CDN de Hostinger se podría crear un bucle.
+  - El dominio temporal anterior, `silver-alligator-184608.hostingersite.com`, ya no abre la web.
 - **Publicación automática.** Cada `git push` a `main` del repositorio **público** `github.com/autoria-admin/web-autoria` (antes `caarloossc/web-autoria`, que redirige) se despliega solo en `public_html`, mediante la aplicación de GitHub de Hostinger. Tarda unos 10–20 s.
 - **En hPanel:** Sitios web → Administrar sitio web → Avanzado → GIT / Configuración de PHP (8.3).
 - **No tocar la web de la empresa** (`eryoncompany.eryoncompany.com`, WordPress) ni su `public_html`.
@@ -32,7 +35,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Pasos: perfil, objetivo, público, frecuencia, tiempo y cámara, calculadora, email y consentimiento, informe.
   - Perfil: capturas de cualquier red o PDF de LinkedIn, leídos con IA. Lo que no aparece se deja en blanco.
   - Informe: puntos fuertes y débiles, bio o titular propuesto, «Dónde centrarte» (1–2 redes), tres ideas de vídeo, ritmo recomendado y llamada.
-- **Charlas** — dos landings con QR ya impresos en la presentación: **no se cambian las rutas ni el parámetro `c`** (código de la charla: C01 es la UAM del 12/11/2026, P01 la prueba con la company del 9/11 y TEST las pruebas técnicas). No salen en el menú, llevan `noindex`, trato de usted y nada se envía solo a la persona (ni correos ni WhatsApp).
+- **Charlas** — dos landings con QR en la presentación (`https://autoriaestudio.com/charla/propuesta?c=C01` y `https://autoriaestudio.com/charla/diagnostico?c=C01`): **no se cambian las rutas ni el parámetro `c`**, y los dos QR tienen que usar el mismo dominio (código de la charla: C01 es la UAM del 12/11/2026, P01 la prueba con la company del 9/11 y TEST las pruebas técnicas). No salen en el menú, llevan `noindex`, trato de usted y nada se envía solo a la persona (ni correos ni WhatsApp).
 - **`charla-propuesta.html` + `lib/charla.js`** — dinámica, en `/charla/propuesta?c=C01`.
   - «Su propuesta de valor.», «Complete la frase. No tiene que quedar perfecta.», tres campos con su palabra delante (Para, aporto, gracias a), el ejemplo completo de la lámina, «Listo» y «Es anónima…».
   - Lo que escriben se guarda en el móvil en cada tecla (`autoria_propuesta_borrador`).
@@ -137,7 +140,6 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 
 - **Equipo:** faltan fotos, cargos y bios. Hay huecos en `index.html`, sección 7, para Carlos, Mario, Adrián y José.
 - **Caso real:** falta el vídeo del cliente, con su permiso, y sus datos. Hay huecos en la sección 6.
-- **Dominio definitivo.** Cuando lo haya, hay que cambiar `og:image`, `og:url` y `canonical` en `index.html` y `diagnostico.html`, y revisar el SSL.
 - **eryoncompany.com caduca hacia el 19 de noviembre de 2026.** Hay que renovarlo si se va a usar para un subdominio.
 - **El panel tiene un registro de prueba** («PRUEBA (borrar) Lucía Ejemplo») que se puede borrar de `contactos.jsonl`.
 

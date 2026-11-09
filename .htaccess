@@ -9,6 +9,11 @@ DirectoryIndex index.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # Una sola dirección: www.autoriaestudio.com lleva a autoriaestudio.com (los QR
+  # van sin www, y la frase de la dinámica se guarda en el móvil por dirección).
+  RewriteCond %{HTTP_HOST} ^www\.autoriaestudio\.com$ [NC]
+  RewriteRule ^ https://autoriaestudio.com%{REQUEST_URI} [R=301,L]
+
   # Nadie puede abrir directamente la carpeta php/ ni sus archivos internos
   RewriteCond %{THE_REQUEST} \s/+php/ [NC]
   RewriteRule ^ - [F,L]
@@ -111,7 +116,10 @@ DirectoryIndex index.html
   AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml font/woff font/woff2
 </IfModule>
 
-# ----- HTTPS redirect (uncomment if your domain has SSL) -----
+# ----- HTTPS redirect -----
+# En Hostinger se activa con «Forzar HTTPS» en hPanel. No descomentar esto sin
+# probarlo: detrás de la CDN de Hostinger, %{HTTPS} puede no reflejar la
+# conexión real del visitante y la web entraría en un bucle de redirecciones.
 # <IfModule mod_rewrite.c>
 #   RewriteEngine On
 #   RewriteCond %{HTTPS} !=on
