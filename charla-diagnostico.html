@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#F5F2EB">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css?v=20261109g">
+  <link rel="stylesheet" href="/styles.css?v=20261109h">
   <link rel="preload" href="/assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
 </head>
@@ -79,6 +79,19 @@
           <p class="ch-field-error" id="cd-consent-error" data-error-de="consent" hidden></p>
         </div>
 
+        <!-- Paso obligatorio para pedir el diagnóstico (decisión del 09/11/2026). La web solo
+             sabe que se ha pulsado el botón, no si la persona se une de verdad en WhatsApp. -->
+        <div class="ch-comunidad" data-comunidad>
+          <p class="kicker">Antes de enviar</p>
+          <p class="ch-comunidad-texto">Para pedir el diagnóstico, únase a la comunidad de la charla, «Firma lo que sabes Autoría». Solo escribimos nosotros, como mucho un mensaje a la semana, y puede salir cuando quiera.</p>
+          <a class="btn btn-primary btn-lg ch-btn ch-btn-wa" data-whatsapp data-comunidad-unirme href="#" target="_blank" rel="noopener" aria-describedby="cd-comunidad-error">Unirme a la comunidad</a>
+          <div class="ch-comunidad-hecho" data-comunidad-hecho hidden>
+            <p class="ch-comunidad-ok"><svg class="ch-check" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><path pathLength="1" d="M10 50 C 20 60, 28 70, 36 84 C 50 52, 66 28, 94 6"/></svg>Hecho. Ya puede pedir su diagnóstico.</p>
+            <a class="ch-edit" data-whatsapp href="#" target="_blank" rel="noopener">¿No se abrió WhatsApp? Ábralo de nuevo</a>
+          </div>
+          <p class="ch-field-error" id="cd-comunidad-error" data-error-de="comunidad" hidden></p>
+        </div>
+
         <!-- Campo trampa para robots: las personas no lo ven -->
         <div class="hp" aria-hidden="true">
           <label for="cd-web">No rellene este campo</label>
@@ -86,7 +99,7 @@
         </div>
 
         <p class="ch-error" data-error role="alert" hidden></p>
-        <button class="btn btn-primary btn-lg ch-btn" type="submit" data-enviar>Quiero mi diagnóstico</button>
+        <button class="btn btn-primary btn-lg ch-btn" type="submit" data-enviar aria-disabled="true">Quiero mi diagnóstico</button>
         <p class="ch-tranquilidad">Un minuto. Solo usamos sus datos para enviarle el diagnóstico y, si le interesa, hablar con usted. Puede pedir que los borremos en <a href="mailto:eryoncompany@gmail.com">eryoncompany@gmail.com</a>.</p>
       </form>
     </section>
@@ -96,13 +109,13 @@
       <h1 class="ch-title ch-title-final" id="cd-final" tabindex="-1" data-final-titulo></h1>
       <p class="ch-lede" data-final-texto></p>
       <p class="ch-aviso" data-final-aviso role="status" aria-live="polite" hidden></p>
-      <div class="ch-ultimo" data-ultimo hidden>
-        <p class="ch-ultimo-texto">Mientras tanto, únase a la comunidad de la charla, «Firma lo que sabes Autoría». Solo escribimos nosotros, como mucho un mensaje a la semana, y puede salir cuando quiera.</p>
-        <a class="btn btn-primary btn-lg ch-btn ch-btn-wa" data-whatsapp href="#" target="_blank" rel="noopener">Unirme a la comunidad</a>
-      </div>
-      <div class="ch-ultimo" data-agenda-box hidden>
-        <p class="ch-ultimo-texto">¿Prefiere hablarlo con nosotros? Reserve una llamada: revisamos su perfil con usted y le contamos cómo trabajar su marca personal.</p>
-        <a class="btn btn-primary btn-lg ch-btn ch-btn-wa" data-agenda href="#" target="_blank" rel="noopener">Reservar una llamada</a>
+      <!-- La agenda de las charlas, destacada: es lo siguiente que queremos que hagan. -->
+      <div class="ch-agenda is-ink" data-agenda-box hidden>
+        <p class="kicker">Siguiente paso</p>
+        <p class="ch-agenda-titulo">Reserve una llamada <em>con nosotros</em>.</p>
+        <p class="ch-agenda-texto">Revisamos su perfil con usted y le contamos cómo trabajar su marca personal.</p>
+        <a class="btn btn-primary btn-lg ch-btn ch-btn-agenda" data-agenda href="#" target="_blank" rel="noopener">Reservar mi llamada <span class="btn-arrow" aria-hidden="true">→</span></a>
+        <p class="ch-agenda-nota">Se abre nuestra agenda: elija el día y la hora que mejor le vengan.</p>
       </div>
       <button class="ch-edit" type="button" data-reintentar hidden>Reintentar ahora</button>
     </section>
@@ -110,7 +123,7 @@
     <noscript><p class="ch-note">Para usar esta página necesita activar JavaScript en su navegador.</p></noscript>
   </main>
 
-  <script src="/lib/manifest.js?v=20261109g" defer></script>
-  <script src="/lib/charla-diagnostico.js?v=20261109g" defer></script>
+  <script src="/lib/manifest.js?v=20261109h" defer></script>
+  <script src="/lib/charla-diagnostico.js?v=20261109h" defer></script>
 </body>
 </html>
