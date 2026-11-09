@@ -12,7 +12,7 @@ $rutas = [
   '#^/panel/?$#' => '/php/panel.php',
   '#^/instalar/?$#' => '/php/instalar.php',
 ];
-if (preg_match('#^/charla/(propuesta|diagnostico)/?$#', $uri, $m)) { header('Content-Type: text/html; charset=utf-8'); readfile($root . '/charla-' . $m[1] . '.html'); return true; }
+if (preg_match('#^/charla/(propuesta|diagnostico)/?$#', $uri, $m)) { $_GET['p'] = $m[1]; require $root . '/php/charla.php'; return true; }
 foreach ($rutas as $re => $destino) {
   if (preg_match($re, $uri)) { require $root . preg_replace($re, $destino, $uri); return true; }
 }
