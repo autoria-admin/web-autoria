@@ -17,6 +17,17 @@ if ($css && preg_match('#<link rel="stylesheet" href="/styles\.css\?v=[^"]*">#',
   $html = str_replace($m[0], "<style>\n" . $css . "</style>", $html);
 }
 
+// Inscripción: la fecha y la hora de la charla (las mismas que van en los correos), delante de «Gratis».
+if ($pagina === 'registro') {
+  define('AUTORIA', 1);
+  require __DIR__ . '/_comun.php';
+  $info = rtrim(charla_info(codigo_charla($_GET['c'] ?? '')), '.');
+  if ($info !== '') {
+    $info = mb_strtoupper(mb_substr($info, 0, 1)) . mb_substr($info, 1);
+    $html = str_replace('<span data-cuando hidden></span>', '<span data-cuando>' . htmlspecialchars($info, ENT_QUOTES, 'UTF-8') . ' · </span>', $html);
+  }
+}
+
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 echo $html;

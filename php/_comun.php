@@ -560,10 +560,15 @@ function correos_registro(?callable $cambio = null) {
   return $d;
 }
 
-// Fecha, hora y lugar de cada charla (texto que sigue a «Le esperamos…»), en config.php.
+// Fecha, hora y lugar de cada charla (texto que sigue a «Le esperamos…»). Lo que se
+// guarde en el panel (charlas_info en config.php) manda; si no hay nada, estos valores.
+// Sale en la confirmación, en el recordatorio y en la landing de inscripción.
+const CHARLAS_INFO = ['C01' => 'el jueves 12 de noviembre a las 16:00'];   // UAM, hora de Costa Rica
+
 function charla_info($charla) {
   $info = config()['charlas_info'] ?? [];
-  return is_array($info) ? trim((string) ($info[$charla] ?? '')) : '';
+  $txt = is_array($info) ? trim((string) ($info[$charla] ?? '')) : '';
+  return $txt !== '' ? $txt : (CHARLAS_INFO[$charla] ?? '');
 }
 
 function texto_correo_registro($clase, array $r) {
