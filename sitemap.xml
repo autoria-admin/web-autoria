@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Páginas que se pueden indexar. Las de las charlas (/charla/…) llevan noindex y no van aquí. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://autoriaestudio.com/</loc><lastmod>2026-11-09</lastmod></url>
+  <url><loc>https://autoriaestudio.com/diagnostico.html</loc><lastmod>2026-11-09</lastmod></url>
+  <url><loc>https://autoriaestudio.com/privacidad.html</loc><lastmod>2026-11-09</lastmod></url>
+  <url><loc>https://autoriaestudio.com/aviso-legal.html</loc><lastmod>2026-11-09</lastmod></url>
+  <url><loc>https://autoriaestudio.com/creditos.html</loc><lastmod>2026-11-09</lastmod></url>
+</urlset>
