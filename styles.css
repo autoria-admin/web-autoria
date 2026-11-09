@@ -1305,7 +1305,45 @@ body::before {
 }
 [data-paso="final"] .ch-edit { display: block; margin: 1rem auto 0; }
 [data-paso="final"] .ch-edit[hidden] { display: none; }
-.ch-ultimo { margin-top: .4rem; padding: 1.4rem 1.2rem 1.2rem; border: 1px solid var(--ink); border-radius: var(--radius); background: rgba(255,255,255,.5); }
-.ch-ultimo[hidden] { display: none; }
-.ch-ultimo-texto { margin-bottom: 1.2rem; font-family: var(--serif); font-size: clamp(1.25rem, 1.1rem + .9vw, 1.55rem); line-height: 1.32; }
+/* paso obligatorio antes de enviar: unirse a la comunidad */
+.ch-comunidad {
+  display: grid; gap: .9rem; margin-top: .3rem; padding: 1.3rem 1.15rem 1.15rem;
+  border: 1px solid var(--ink); border-radius: var(--radius); background: rgba(255,255,255,.55);
+  transition: border-color .3s, box-shadow .3s;
+}
+.page-charla .ch-comunidad .kicker { color: var(--accent-ink); }
+.ch-comunidad-texto { font-family: var(--serif); font-size: clamp(1.2rem, 1.08rem + .7vw, 1.42rem); line-height: 1.32; }
+.ch-comunidad.is-invalid { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ch-comunidad.is-hecho { border-color: var(--line-2); }
+.ch-comunidad-hecho { display: grid; justify-items: start; gap: .1rem; }
+.ch-comunidad-ok { display: flex; align-items: center; gap: .6rem; font-size: 1.05rem; font-weight: 600; }
+.ch-check { flex: none; width: 26px; height: 26px; overflow: visible; fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
+.ch-check path { stroke-dasharray: 1; animation: chDraw .6s var(--ease-in-out) .1s both; }
+.ch-comunidad-hecho .ch-edit { display: inline-flex; align-items: center; padding-inline: 0; text-align: left; }
 .ch-btn-wa { min-height: 64px; padding-inline: 1rem; font-size: 1.05rem; white-space: normal; text-align: center; }
+/* el botón de enviar, apagado hasta que se pulsa el de la comunidad (sigue pudiéndose pulsar) */
+.btn.ch-btn[aria-disabled="true"],
+.btn.ch-btn[aria-disabled="true"]:hover,
+.btn.ch-btn[aria-disabled="true"]:focus-visible { background: transparent; color: var(--ink-mute); border-color: var(--line-2); }
+.btn.ch-btn[aria-disabled="true"]::before { display: none; }
+
+/* final: la agenda, destacada */
+.ch-agenda {
+  margin-top: .2rem; padding: 1.6rem 1.25rem 1.3rem;
+  border-radius: var(--radius); box-shadow: var(--shadow-2);
+}
+.ch-agenda[hidden] { display: none; }
+.page-charla .ch-agenda .kicker { margin-bottom: .75rem; color: var(--accent); }
+.ch-agenda-titulo {
+  margin-bottom: .8rem; font-family: var(--serif); font-weight: 360; font-optical-sizing: auto;
+  font-size: clamp(2rem, 1.6rem + 2vw, 2.6rem); line-height: 1.04; letter-spacing: -0.022em;
+}
+.ch-agenda-titulo em { font-weight: 300; color: var(--accent); }
+.ch-agenda-texto { margin-bottom: 1.35rem; font-size: 1.06rem; line-height: 1.5; color: var(--on-ink-mute); }
+.ch-btn-agenda { min-height: 66px; font-size: 1.14rem; white-space: normal; animation: chLlamar 1.8s var(--ease-out) .9s 3; }
+.ch-agenda-nota { margin-top: .85rem; font-size: .88rem; line-height: 1.45; color: var(--on-ink-mute); text-align: center; }
+@keyframes chLlamar {
+  from { box-shadow: 0 0 0 0 rgba(233, 68, 31, .65); }
+  to   { box-shadow: 0 0 0 18px rgba(233, 68, 31, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .ch-btn-agenda, .ch-check path { animation: none; } }
