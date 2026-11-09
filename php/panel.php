@@ -19,6 +19,10 @@ $error = '';
 
 if (isset($_GET['salir'])) { $_SESSION = []; session_destroy(); header('Location: /panel', true, 303); exit; }
 
+// Tras iniciar sesión se vuelve a la vista pedida (p. ej. /panel?vista=hoja), solo si es una de las del panel.
+$vistaPedida = (string) ($_GET['vista'] ?? '');
+$volver = in_array($vistaPedida, ['hoja', 'charlas', 'propuestas', 'avisos'], true) ? '/panel?vista=' . $vistaPedida : '/panel';
+
 // Ajustes de los avisos por email (solo con la sesión iniciada).
 $avisoMsg = '';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !empty($_SESSION['ok']) && $hash !== '' && isset($_POST['accion'])) {
@@ -66,7 +70,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !empty($_SESSION['ok']) && 
 }
 elseif (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
   if (rate_limit('login', 5, 30, 300) !== null) { $error = 'Demasiados intentos. Espera unos minutos.'; http_response_code(429); }
-  elseif ($hash !== '' && password_verify((string) ($_POST['clave'] ?? ''), $hash)) { session_regenerate_id(true); $_SESSION['ok'] = 1; header('Location: /panel', true, 303); exit; }
+  elseif ($hash !== '' && password_verify((string) ($_POST['clave'] ?? ''), $hash)) { session_regenerate_id(true); $_SESSION['ok'] = 1; header('Location: ' . $volver, true, 303); exit; }
   else { $error = 'Contraseña incorrecta.'; http_response_code(401); }
 }
 $logged = !empty($_SESSION['ok']) && $hash !== '';
@@ -200,7 +204,7 @@ function fecha_es($iso) {
 </head>
 <body><div class="wrap">
 <?php if (!$logged): ?>
-  <form class="login" method="post" action="/panel" autocomplete="off">
+  <form class="login" method="post" action="<?php echo $e($volver); ?>" autocomplete="off">
     <h1>Autoría<span>.</span> Panel</h1>
     <p class="meta">Contactos y diagnósticos recibidos desde la web.</p>
     <?php if ($hash === ''): ?><p class="err">El panel aún no tiene contraseña. Ve a <a href="/instalar">/instalar</a> para configurarlo.</p><?php endif; ?>
