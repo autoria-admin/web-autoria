@@ -536,7 +536,8 @@ function enviar_correo($to, $asunto, $texto) {
   if (!empty($cfg['smtp_user']) && !empty($cfg['smtp_pass'])) return smtp_gmail($cfg['smtp_user'], $cfg['smtp_pass'], $to, $asunto, $texto, smtp_servidor(), 'Autoría');
   if (!function_exists('mail')) return 'el servidor no puede enviar correo';
   $host = preg_replace('/[^a-z0-9.\-]/i', '', preg_replace('/^www\./', '', $_SERVER['HTTP_HOST'] ?? 'autoria'));
-  $cab = 'From: =?UTF-8?B?' . base64_encode('Autoría') . '?= <no-reply@' . $host . ">\r\nContent-Type: text/plain; charset=utf-8";
+  // Sin Gmail, sale de no-reply@ del dominio: las respuestas van al correo de Autoría.
+  $cab = 'From: =?UTF-8?B?' . base64_encode('Autoría') . '?= <no-reply@' . $host . ">\r\nReply-To: admin.autoria@gmail.com\r\nContent-Type: text/plain; charset=utf-8";
   return @mail($to, '=?UTF-8?B?' . base64_encode($asunto) . '?=', $texto, $cab) ? '' : 'el servidor no pudo enviarlo';
 }
 
