@@ -35,6 +35,33 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && !empty($_SESSION['ok']) && 
   } elseif ($_POST['accion'] === 'probar') {
     $ok = notify_team('Prueba de avisos — Autoría', ['mensaje' => 'Correo de prueba enviado desde el panel.', 'fecha' => ahora()]);
     header('Location: /panel?vista=avisos&' . ($ok ? 'ok=2' : 'fallo=1'), true, 303); exit;
+  } elseif ($_POST['accion'] === 'guardar_hoja') {
+    // URL y token del Apps Script de la hoja. El token vacío conserva el que había.
+    $url = clean_str($_POST['hoja_url'] ?? '', 300);
+    $tok = preg_replace('/\s+/', '', (string) ($_POST['hoja_token'] ?? ''));
+    if ($tok === '') $tok = (string) (config()['hoja_token'] ?? '');
+    // https siempre; http solo para probar en local con una hoja falsa.
+    if (!preg_match('#^(https://|http://(localhost|127\.0\.0\.1)[:/])\S+$#i', $url)) $_SESSION['hoja_msg'] = ['err', 'La URL tiene que empezar por https:// (la que acaba en /exec).'];
+    elseif ($tok === '') $_SESSION['hoja_msg'] = ['err', 'Falta el token del script.'];
+    elseif (!guardar_config(['hoja_url' => $url, 'hoja_token' => $tok])) $_SESSION['hoja_msg'] = ['err', 'No se pudo guardar la configuración.'];
+    else {
+      $err = hoja_probar($url, $tok);
+      $_SESSION['hoja_msg'] = $err === '' ? ['ok', 'Guardado. La hoja responde y el token es correcto.'] : ['err', 'Guardado, pero la prueba ha fallado: ' . $err . '.'];
+    }
+    header('Location: /panel?vista=hoja', true, 303); exit;
+  } elseif ($_POST['accion'] === 'reenviar_hoja') {
+    // Reenvío a mano: todos los pendientes que quepan en un minuto y los contadores de cada charla.
+    @set_time_limit(120);
+    if (!hoja_configurada()) $_SESSION['hoja_msg'] = ['err', 'Primero hay que guardar la URL y el token de la hoja.'];
+    else {
+      $r = hoja_reintentar(1000, 60);
+      $n = 0;
+      foreach (array_keys(leer_visitas()) as $k) if ($k !== '' && hoja_contadores((string) $k, true)) $n++;
+      $txt = $r['ocupado'] ? 'Otro envío estaba reenviando pendientes en este momento; vuelva a intentarlo en un minuto.'
+        : 'Reenviados: ' . $r['enviados'] . '. Siguen pendientes: ' . $r['quedan'] . '. Contadores actualizados: ' . $n . ' charlas.';
+      $_SESSION['hoja_msg'] = [$r['quedan'] || $r['ocupado'] ? 'err' : 'ok', $txt];
+    }
+    header('Location: /panel?vista=hoja', true, 303); exit;
   }
 }
 elseif (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -167,6 +194,7 @@ function fecha_es($iso) {
   .nota { margin-top: .6rem; }
   .okmsg { color: #1f6b3a; font-weight: 600; margin-bottom: 1rem; }
   .login.ajustes { margin: 1.4rem 0 1rem; }
+  .tabla td.izq { text-align: left; white-space: normal; min-width: 14rem; }
   @media (max-width: 720px) { .card summary, .card.prop { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -200,10 +228,51 @@ function fecha_es($iso) {
     <button class="btn primary" type="submit">Guardar y enviar prueba</button>
   </form>
   <form method="post" action="/panel?vista=avisos"><input type="hidden" name="accion" value="probar"><button class="btn" type="submit">Enviar solo un correo de prueba</button></form>
+<?php elseif (($_GET['vista'] ?? '') === 'hoja'):
+  $cfgH = config(); $pendH = hoja_pendientes(); $contH = hoja_estado_contadores();
+  $msgH = $_SESSION['hoja_msg'] ?? null; unset($_SESSION['hoja_msg']); ?>
+  <div class="bar">
+    <div><h1>Autoría<span>.</span> Hoja de Google</h1><p class="meta">«CRM de las charlas»: cada envío de las charlas se copia también en la hoja</p></div>
+    <div><a class="btn" href="/panel?vista=charlas">Charlas</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+  </div>
+  <?php if ($msgH): ?><p class="<?php echo $msgH[0] === 'ok' ? 'okmsg' : 'err'; ?>"><?php echo $e($msgH[1]); ?></p><?php endif; ?>
+  <p class="meta">Estado: <strong><?php echo hoja_configurada() ? 'conectada a ' . $e(preg_replace('#^(https://[^/]+/macros/s/.{6}).*(.{6}/exec)$#', '$1…$2', (string) $cfgH['hoja_url'])) : 'sin configurar (los envíos se guardan y esperan aquí como pendientes)'; ?></strong></p>
+  <form class="login ajustes" method="post" action="/panel?vista=hoja" autocomplete="off">
+    <input type="hidden" name="accion" value="guardar_hoja">
+    <label for="hoja_url" class="meta">URL del script (la que acaba en /exec)</label>
+    <input id="hoja_url" name="hoja_url" type="url" value="<?php echo $e($cfgH['hoja_url'] ?? ''); ?>" placeholder="https://script.google.com/macros/s/…/exec" required>
+    <label for="hoja_token" class="meta">Token del script<?php echo !empty($cfgH['hoja_token']) ? ' (ya hay uno guardado: déjelo vacío para conservarlo)' : ''; ?></label>
+    <input id="hoja_token" name="hoja_token" type="password" autocomplete="new-password"<?php echo empty($cfgH['hoja_token']) ? ' required' : ''; ?>>
+    <button class="btn primary" type="submit">Guardar y probar</button>
+  </form>
+
+  <div class="bar sub">
+    <div><h2>Pendientes de la hoja</h2><p class="meta"><?php echo count($pendH); ?> envíos guardados en el servidor que aún no están en la hoja. Se reintentan solos con cada envío nuevo (hasta 20 cada vez).</p></div>
+    <div><form method="post" action="/panel?vista=hoja"><input type="hidden" name="accion" value="reenviar_hoja"><button class="btn primary" type="submit">Reenviar pendientes</button></form></div>
+  </div>
+  <?php if ($pendH): ?>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Envío</th><th>Charla</th><th>Fecha</th><th>Intentos</th><th>Último error</th></tr></thead>
+    <tbody><?php foreach (array_reverse($pendH, true) as $id => $p): $dt = $p['datos'] ?? []; ?>
+      <tr><td><?php echo $e(($dt['tipo'] ?? '') === 'diagnostico' ? 'Diagnóstico · ' . ($dt['correo'] ?? '') : 'Propuesta (anónima)'); ?></td><td><?php echo $e(($dt['charla'] ?? '') ?: '—'); ?></td><td><?php echo $e(fecha_es($dt['fecha'] ?? '')); ?></td><td><?php echo (int) ($p['intentos'] ?? 0); ?></td><td class="izq"><?php echo $e($p['error'] ?? ''); ?></td></tr>
+    <?php endforeach; ?></tbody>
+  </table></div>
+  <?php else: ?><p class="meta">No hay ninguno.</p><?php endif; ?>
+
+  <div class="bar sub"><div><h2>Contadores en la hoja</h2><p class="meta">Se envían con cada envío y cada pulsación en «Unirme a la comunidad», como mucho una vez por minuto. «Reenviar pendientes» los pone al día: conviene pulsarlo al acabar cada charla.</p></div></div>
+  <?php $codH = array_values(array_filter(array_map('strval', array_keys(leer_visitas())), 'strlen')); sort($codH); ?>
+  <?php if ($codH): ?>
+  <div class="tabla-wrap"><table class="tabla">
+    <thead><tr><th>Charla</th><th>Ahora (dinámica · diagnóstico · comunidad)</th><th>En la hoja</th><th>Enviados</th><th>Último error</th></tr></thead>
+    <tbody><?php foreach ($codH as $k): $t = hoja_totales($k); $h = $contH[$k] ?? []; $en = $h['enviados'] ?? null; ?>
+      <tr><td><?php echo $e($k); ?></td><td><?php echo implode(' · ', $t); ?></td><td><?php echo $en ? implode(' · ', array_map('intval', $en)) : '—'; ?></td><td><?php echo $e(!empty($h['enviado_en']) ? fecha_es($h['enviado_en']) : '—'); ?></td><td class="izq"><?php echo $e($h['error'] ?? ''); ?></td></tr>
+    <?php endforeach; ?></tbody>
+  </table></div>
+  <?php else: ?><p class="meta">Todavía no hay visitas de ninguna charla.</p><?php endif; ?>
 <?php elseif ($vistaCharlas): ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Charlas</h1><p class="meta">Visitas, propuestas y diagnósticos pedidos por código de charla</p></div>
-    <div><a class="btn" href="/panel?vista=propuestas">Propuestas</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?vista=propuestas">Propuestas</a> <a class="btn" href="/panel?vista=hoja">Hoja de Google</a> <a class="btn" href="/panel">Contactos</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$resumen): ?><p class="empty">Todavía no hay datos de ninguna charla.</p><?php else: ?>
   <div class="tabla-wrap"><table class="tabla">
@@ -268,7 +337,7 @@ function fecha_es($iso) {
 <?php else: ?>
   <div class="bar">
     <div><h1>Autoría<span>.</span> Panel</h1><p class="meta"><?php echo count($rows); ?> registros · los más recientes primero</p></div>
-    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=avisos">Avisos por email</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
+    <div><a class="btn" href="/panel?csv=1">Descargar Excel (CSV)</a> <a class="btn" href="/panel?vista=charlas">Charlas (<?php echo count($diags); ?> diagnósticos)</a> <a class="btn" href="/panel?vista=propuestas">Propuestas (<?php echo count($props); ?>)</a> <a class="btn" href="/panel?vista=hoja">Hoja de Google (<?php echo count(hoja_pendientes()); ?> pendientes)</a> <a class="btn" href="/panel?vista=avisos">Avisos por email</a> <a class="btn" href="/panel?salir=1">Salir</a></div>
   </div>
   <?php if (!$rows): ?><p class="empty">Todavía no ha llegado ningún contacto.</p><?php endif; ?>
   <?php foreach ($rows as $r): $isD = ($r['tipo'] ?? '') === 'diagnostico'; $p = $r['perfil'] ?? []; $q = $r['respuestas'] ?? []; $c = $r['calculo'] ?? []; $res = $r['resultado'] ?? null; ?>
