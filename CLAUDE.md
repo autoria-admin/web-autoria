@@ -21,7 +21,8 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - La redirección de http a https se activa con «Forzar HTTPS» en hPanel, no en `.htaccess`: detrás de la CDN de Hostinger se podría crear un bucle.
   - El dominio temporal anterior, `silver-alligator-184608.hostingersite.com`, ya no abre la web.
 - **Publicación automática.** Cada `git push` a `main` del repositorio **público** `github.com/autoria-admin/web-autoria` (antes `caarloossc/web-autoria`, que redirige) se despliega solo en `public_html`, mediante la aplicación de GitHub de Hostinger. Tarda unos 10–20 s.
-  - **Comprobar que se ha aplicado:** la versión `?v=` de `styles.css` en `privacidad.html` publicada tiene que ser la del repositorio. El 09/11/2026 el cambio #10 no llegó: Hostinger siguió con el commit anterior incluso al pulsar «Implementar» en hPanel → GIT. Un commit nuevo en `main` vuelve a mandar el aviso.
+  - **Hostinger tiene que publicar desde la rama `main`.** Del 9/11 a las 18:33 UTC hasta las 20:20 UTC estuvo conectado por error a una rama de trabajo de Claude (`claude/loving-cerf-3w8o58`), y lo que se fusionaba en `main` no llegaba a la web. La rama se ve y se cambia en hPanel → GIT, en la lista «Despliegues» (columna «Rama»); «Redistribuir» vuelve a publicar.
+  - **Comprobar que se ha aplicado:** la versión `?v=` de `styles.css` en `privacidad.html` publicada tiene que ser la del repositorio.
 - **En hPanel:** Sitios web → Administrar sitio web → Avanzado → GIT / Configuración de PHP (8.3).
 - **No tocar la web de la empresa** (`eryoncompany.eryoncompany.com`, WordPress) ni su `public_html`.
 - **Vercel ya no existe.** Se borró en octubre de 2026. Los archivos `api/*.js`, `vercel.json` y `tools/dev-server.mjs` se conservan porque PHP lee de `api/` los textos de la IA (ver más abajo).
