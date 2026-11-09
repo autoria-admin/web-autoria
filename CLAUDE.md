@@ -8,6 +8,12 @@ Web de **Autoría**, la agencia de marca personal en **redes sociales** (LinkedI
 
 Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en general. Que no vuelva a aparecer «solo LinkedIn» salvo donde tenga sentido, como el PDF de LinkedIn en el diagnóstico.
 
+**Enfoque del mensaje (desde el 9/11/2026,** tras el feedback de la OBV sobre la charla y la reunión con el cliente Pablo Caño):
+- El valor de Autoría no está en editar vídeos ni en escribir guiones: eso va incluido y se da por hecho. Está en **pensar**: la estrategia (qué contar, a quién, cuándo y para qué), la dirección de las grabaciones y sacar de cada contenido del cliente todo su valor (de una grabación, varias piezas) para que su conocimiento trabaje para su negocio.
+- Primero la emoción y la transformación (del experto invisible a que te conozcan y confíen en ti), después lo técnico. Frases cortas: lo que se dice en 10 palabras no se dice en 40.
+- No dar por sabido qué es una marca personal: explicarlo en una frase. Sin jerga («funnel», «engagement»).
+- No se mide por número de vídeos: el ritmo depende de la estrategia y de lo que funcione.
+
 ## Dónde está publicada
 
 - **Hostinger, plan Business.** El sitio es **`autoriaestudio.com`** desde el 9/11/2026 (DNS de Hostinger, certificado SSL de Hostinger).
@@ -23,14 +29,14 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 
 - **`index.html`** — portada y secciones numeradas:
   1. Portada
-  2. Problema («El experto invisible»)
+  2. Problema («El experto invisible», con «Marca personal, en una frase»)
   3. Método (cuatro tiempos)
-  4. Qué hacemos
+  4. Qué hacemos («Tú pones lo que sabes. Nosotros, que trabaje para ti.»)
   5. Contacto
-  6. Caso real
-  7. Equipo
-  8. Diagnóstico
-  9. Preguntas
+  6. Diagnóstico
+  7. Preguntas
+  - **Caso real y Equipo están ocultos** (atributo `hidden`, sus enlaces del menú están comentados) hasta tener su contenido. Para volver a mostrarlos: quitar `hidden`, recuperar los enlaces y renumerar (Caso real 06, Equipo 07, Diagnóstico 08 y Preguntas 09; también el «Nº» de `diagnostico.html`).
+  - **SEO:** título y descripción, datos estructurados (`ProfessionalService`, `WebSite` y `FAQPage`) en la cabecera. Las preguntas del `FAQPage` tienen que coincidir con las de la sección de preguntas: si se cambian, se cambian en los dos sitios.
 - **`diagnostico.html` + `lib/diagnostico.js`** — el diagnóstico gratis.
   - Pasos: perfil, objetivo, público, frecuencia, tiempo y cámara, calculadora, email y consentimiento, informe.
   - Perfil: capturas de cualquier red o PDF de LinkedIn, leídos con IA. Lo que no aparece se deja en blanco.
@@ -59,6 +65,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - colores: papel `#F5F2EB`, tinta `#15161C` y acento `#E9441F`;
   - tipografías Newsreader e Instrument Sans, alojadas en `assets/fonts`.
 - **Páginas legales:** `privacidad.html`, `aviso-legal.html` y `creditos.html`.
+- **`sitemap.xml`, `robots.txt` y `llms.txt`** — páginas indexables (sin las de las charlas, que llevan `noindex`), bloqueo de `/panel`, `/instalar` y `/api/`, y un resumen de Autoría para los buscadores con IA. Al añadir una página indexable, se añade al `sitemap.xml`.
 - **`php/`** — la parte de servidor en Hostinger:
   - `_comun.php`: utilidades, Gemini, límites de uso y guardado;
   - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `charla-diagnostico.php`, `visita.php`, `charla.php`, `panel.php` e `instalar.php`.
@@ -138,8 +145,9 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 ## Pendiente
 
 - **Hoja de Google:** borrar las filas de prueba (charla TEST y la fila EJEMPLO) antes de la charla del 12/11.
-- **Equipo:** faltan fotos, cargos y bios. Hay huecos en `index.html`, sección 7, para Carlos, Mario, Adrián y José.
-- **Caso real:** falta el vídeo del cliente, con su permiso, y sus datos. Hay huecos en la sección 6.
+- **Equipo (oculto):** faltan fotos, cargos y bios. Hay huecos en `index.html`, sección `#equipo`, para Carlos, Mario, Adrián y José.
+- **Caso real (oculto):** falta el vídeo del cliente, con su permiso, y sus datos. Hay huecos en la sección `#caso`.
+- **SEO fuera del código:** dar de alta `autoriaestudio.com` en Google Search Console (verificación por DNS en Hostinger) y en Bing Webmaster Tools, enviar el `sitemap.xml` y poner la web en la página de empresa de LinkedIn.
 - **eryoncompany.com caduca hacia el 19 de noviembre de 2026.** Hay que renovarlo si se va a usar para un subdominio.
 - **El panel tiene un registro de prueba** («PRUEBA (borrar) Lucía Ejemplo») que se puede borrar de `contactos.jsonl`.
 
