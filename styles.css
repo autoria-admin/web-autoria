@@ -4,7 +4,7 @@
    1. Tipografías  2. Tokens  3. Reset  4. Utilidades
    5. Componentes  6. Secciones  7. Asistente  8. Diagnóstico
    9. Páginas legales  10. Efectos  11. Movimiento reducido  12. Impresión
-   13. Dinámica de las charlas
+   13. Charlas
    ============================================================= */
 
 /* =============================================================
@@ -1193,8 +1193,9 @@ body::before {
 }
 
 /* =============================================================
-   13. Dinámica de las charlas (charla-propuesta.html)
-   Pensada para el móvil: una columna, campos y botones grandes.
+   13. Charlas (charla-propuesta.html y charla-diagnostico.html)
+   Pensadas para el móvil: una columna, letra de 16 px o más en los
+   campos y botones de 44 px de alto o más.
    ============================================================= */
 .page-charla { min-height: 100vh; min-height: 100dvh; }
 .ch-top {
@@ -1212,51 +1213,65 @@ body::before {
 .ch-title .anno path { stroke-width: 3px; animation: chDraw .9s var(--ease-in-out) .35s both; }
 .ch-title .anno path + path { animation-delay: 1.05s; animation-duration: .5s; }
 @keyframes chDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.ch-title-final:focus { outline: none; }
+.ch-lede { margin: -.6rem 0 1.8rem; font-size: 1.12rem; line-height: 1.5; color: var(--ink-soft); }
+.ch-sello { margin: -1.2rem 0 1.8rem; font-size: .88rem; font-weight: 600; color: var(--ink-mute); }
 
 .ch-form { display: grid; gap: 1.1rem; }
+.ch-form [hidden] { display: none !important; }
 .page-charla .field label, .page-charla .kicker { letter-spacing: .14em; }
 .ch-form .field input { min-height: 54px; font-size: 1.06rem; }
 .ch-form .field input::placeholder { color: #75736C; font-style: italic; opacity: 1; }
-
-.ch-preview {
-  margin-top: .3rem; padding: 1rem 1.1rem;
-  background: var(--paper-2); border-left: 2px solid var(--ink); border-radius: 0 var(--radius) var(--radius) 0;
-  font-family: var(--serif); font-size: 1.32rem; line-height: 1.35; color: var(--ink-soft);
-  overflow-wrap: anywhere;
-}
-.ch-fill { color: var(--ink); font-style: italic; }
-.ch-gap { display: inline-block; min-width: 2.6em; border-bottom: 1px solid var(--line-2); line-height: 1; }
-.ch-note { font-family: var(--serif); font-style: italic; font-size: 1.08rem; color: var(--ink-mute); }
+.ch-field-note { font-size: .85rem; color: var(--ink-mute); }
+.ch-field-error { font-size: .9rem; font-weight: 600; color: var(--accent-ink); }
 .ch-error { font-size: .95rem; font-weight: 600; color: var(--accent-ink); }
+.ch-note { font-family: var(--serif); font-style: italic; font-size: 1.08rem; color: var(--ink-mute); }
 .ch-btn { width: 100%; min-height: 56px; font-size: 1.05rem; }
-
-.ch-kicker { color: var(--ink); }
-.ch-frase {
-  margin: 1.1rem 0 2.2rem;
-  font-family: var(--serif); font-weight: 380; font-optical-sizing: auto;
-  font-size: clamp(2rem, 1.45rem + 2.8vw, 3rem); line-height: 1.16; letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-.ch-frase:focus { outline: none; }
-.ch-actions { display: grid; gap: .5rem; justify-items: center; }
+.ch-btn[hidden] { display: none; }
+.ch-tranquilidad { font-size: .88rem; line-height: 1.5; color: var(--ink-mute); text-align: center; }
+.ch-tranquilidad a { text-decoration: underline; text-underline-offset: 3px; }
 .ch-edit {
   min-height: 44px; padding: 0 .6rem;
   font-size: .95rem; font-weight: 500; color: var(--ink-soft);
   text-decoration: underline; text-underline-offset: 3px;
 }
-.ch-status { margin-top: 1.4rem; font-size: .92rem; color: var(--ink-mute); text-align: center; }
-.ch-status[data-tipo="pendiente"] { color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) { .ch-title .anno path { animation: none; } }
 
-/* cierre de la charla (charla-diagnostico.html) */
-.ch-form [hidden] { display: none !important; }
-.ch-lede { margin: -.6rem 0 1.8rem; font-size: 1.12rem; line-height: 1.5; color: var(--ink-soft); }
-.ch-frase-guardada { padding: .9rem 1.1rem; background: var(--paper-2); border-left: 2px solid var(--ink); border-radius: 0 var(--radius) var(--radius) 0; }
-.ch-frase-mini { margin-top: .35rem; font-family: var(--serif); font-style: italic; font-size: 1.15rem; line-height: 1.4; overflow-wrap: anywhere; }
-.ch-form .field textarea { min-height: 96px; font-size: 1.06rem; }
-.ch-form .field textarea::placeholder { color: #75736C; font-style: italic; opacity: 1; }
-.ch-field-note { font-size: .85rem; color: var(--ink-mute); }
-.ch-field-error { font-size: .88rem; font-weight: 600; color: var(--accent-ink); }
+/* dinámica: cada campo con su palabra delante, como en la frase de la lámina */
+.page-charla .ch-linea label {
+  font-family: var(--serif); font-size: 1.35rem; font-weight: 400; line-height: 1.2;
+  letter-spacing: 0; text-transform: none; color: var(--ink);
+}
+.ch-form .ch-linea input { padding-inline: .8rem; }
+.ch-form .ch-linea input::placeholder { font-size: .88em; }   /* que el ejemplo de cada campo quepa entero desde 360 px */
+@media (min-width: 560px) { .ch-linea { grid-template-columns: 5.6rem 1fr; align-items: center; gap: .8rem; } }
+.ch-ejemplo, .ch-frase-guardada {
+  padding: .8rem 1rem; background: var(--paper-2);
+  border-left: 2px solid var(--line-strong); border-radius: 0 var(--radius) var(--radius) 0;
+}
+.ch-ejemplo-frase, .ch-frase-mini {
+  margin-top: .3rem; font-family: var(--serif); font-style: italic; font-size: 1.1rem; line-height: 1.4;
+  color: var(--ink-soft); overflow-wrap: anywhere;
+}
+.ch-kicker { color: var(--ink); }
+.ch-frase {
+  margin: 1.1rem 0 1.4rem;
+  font-family: var(--serif); font-weight: 380; font-optical-sizing: auto;
+  font-size: clamp(2rem, 1.45rem + 2.8vw, 3rem); line-height: 1.16; letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.ch-frase:focus { outline: none; }
+.ch-mini { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 1.4rem; }
+.ch-status { margin-top: .4rem; font-size: .92rem; color: var(--ink-mute); text-align: center; }
+.ch-status[data-tipo="pendiente"] { color: var(--ink-soft); }
+.ch-siguiente { margin-top: 2.2rem; padding-top: 1.7rem; border-top: 1px solid var(--line-2); }
+.ch-siguiente-texto {
+  margin-bottom: 1.1rem; font-family: var(--serif); font-weight: 380;
+  font-size: clamp(1.5rem, 1.25rem + 1.4vw, 1.95rem); line-height: 1.2; letter-spacing: -0.015em;
+}
+
+/* diagnóstico */
+.ch-frase-guardada { margin-bottom: 1.3rem; }
 .ch-redes { border: 0; padding: 0; min-width: 0; }
 .ch-redes legend { padding: 0; margin-bottom: .4rem; font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-mute); }
 .ch-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; }
@@ -1270,20 +1285,19 @@ body::before {
 .ch-seg input:checked + span { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .ch-seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 3px; }
 .ch-redes.is-invalid .ch-seg span { border-color: var(--accent); }
+.ch-redes .ch-field-error { margin-top: .4rem; }
+.ch-sugerencia { display: flex; flex-wrap: wrap; align-items: center; gap: 0 .3rem; font-size: .92rem; color: var(--ink-soft); }
+.ch-sugerencia .ch-edit { padding: 0 .2rem; }
+.ch-consent-campo { display: grid; gap: .4rem; }
 .page-charla .consent { display: grid; grid-template-columns: 24px 1fr; gap: .75rem; align-items: start; font-size: .95rem; }
 .page-charla .consent input { width: 24px; height: 24px; margin: 0; }
-.ch-title-final:focus { outline: none; }
 .ch-aviso {
   margin: -.6rem 0 1.6rem; padding: .9rem 1rem; font-size: .98rem; line-height: 1.5; font-weight: 500;
   border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); color: var(--ink);
 }
 [data-paso="final"] .ch-edit { display: block; margin: 1rem auto 0; }
 [data-paso="final"] .ch-edit[hidden] { display: none; }
-.ch-btn[hidden] { display: none; }
 .ch-ultimo { margin-top: .4rem; padding: 1.4rem 1.2rem 1.2rem; border: 1px solid var(--ink); border-radius: var(--radius); background: rgba(255,255,255,.5); }
 .ch-ultimo[hidden] { display: none; }
-.ch-paso { display: inline-block; padding: .3em .6em; background: var(--ink); color: var(--paper); border-radius: 2px; }
-.ch-ultimo-titulo { margin: .9rem 0 1.2rem; font-family: var(--serif); font-weight: 360; font-size: clamp(1.7rem, 1.3rem + 2vw, 2.3rem); line-height: 1.1; letter-spacing: -0.02em; }
-.ch-ultimo-titulo em { font-weight: 300; }
+.ch-ultimo-texto { margin-bottom: 1.2rem; font-family: var(--serif); font-size: clamp(1.25rem, 1.1rem + .9vw, 1.55rem); line-height: 1.32; }
 .ch-btn-wa { min-height: 64px; padding-inline: 1rem; font-size: 1.05rem; white-space: normal; text-align: center; }
-.ch-ultimo-nota { margin-top: .7rem; text-align: center; }

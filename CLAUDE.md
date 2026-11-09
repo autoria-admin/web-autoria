@@ -32,14 +32,18 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - Pasos: perfil, objetivo, público, frecuencia, tiempo y cámara, calculadora, email y consentimiento, informe.
   - Perfil: capturas de cualquier red o PDF de LinkedIn, leídos con IA. Lo que no aparece se deja en blanco.
   - Informe: puntos fuertes y débiles, bio o titular propuesto, «Dónde centrarte» (1–2 redes), tres ideas de vídeo, ritmo recomendado y llamada.
-- **`charla-propuesta.html` + `lib/charla.js`** — dinámica de las charlas, en `/charla/propuesta?c=C01` (código de la charla).
-  - No sale en el menú y lleva `noindex`. Trato de usted.
-  - Tres campos (para, aporto, gracias a), la frase en vivo, «Listo» y la frase en grande para leerla en voz alta.
-  - Guarda anónimo en `/api/propuesta` (`php/propuesta.php`): sin nombre ni correo y sin aviso por email. Se ve en `/panel?vista=propuestas`, filtrable por código y con CSV.
+- **Charlas** — dos landings con QR ya impresos en la presentación: **no se cambian las rutas ni el parámetro `c`** (código de la charla: C01 es la UAM del 12/11/2026, P01 la prueba con la company del 9/11 y TEST las pruebas técnicas). No salen en el menú, llevan `noindex`, trato de usted y nada se envía solo a la persona (ni correos ni WhatsApp).
+- **`charla-propuesta.html` + `lib/charla.js`** — dinámica, en `/charla/propuesta?c=C01`.
+  - «Su propuesta de valor.», «Complete la frase. No tiene que quedar perfecta.», tres campos con su palabra delante (Para, aporto, gracias a), el ejemplo completo de la lámina, «Listo» y «Es anónima…».
+  - Lo que escriben se guarda en el móvil en cada tecla (`autoria_propuesta_borrador`).
+  - Tras «Listo»: la frase en grande, «Editar la frase» y «Copiar», y separado «Cuando acaben en parejas…» con el botón «Pedir mi diagnóstico gratis», que abre `/charla/diagnostico` con el mismo `c`.
+  - Guarda anónimo en `/api/propuesta` (`php/propuesta.php`), sin aviso por email. Se ve en `/panel?vista=propuestas`, filtrable por código y con CSV.
   - La frase queda en `localStorage` con la clave `autoria_propuesta` (JSON con `frase`, `para`, `aporto`, `gracias_a`, `charla` y `fecha`) para que la recupere el diagnóstico. Sin conexión, los envíos esperan en `autoria_propuesta_cola` y se reintentan solos.
-- **`charla-diagnostico.html` + `lib/charla-diagnostico.js`** — cierre de las charlas, en `/charla/diagnostico?c=C01`.
-  - Correo (obligatorio), nombre (opcional), red principal (LinkedIn, Instagram o TikTok), enlace o usuario del perfil y casilla de consentimiento. Muestra «Su frase» si `autoria_propuesta` está en el móvil; si no, un campo opcional para pegarla.
-  - Guarda en `/api/charla-diagnostico` (`php/charla-diagnostico.php`) y avisa al equipo por email de cada envío. El id lo pone el móvil, así que los reintentos y los dobles clics no duplican ni el registro ni el aviso.
+- **`charla-diagnostico.html` + `lib/charla-diagnostico.js`** — cierre de las charlas, en `/charla/diagnostico?c=C01`. Los textos salen de una revisión con la heurística de conversión de MECLABS.
+  - Si `autoria_propuesta` está en el móvil, arriba va «Su frase» y el titular es «¿Se nota esta frase en su perfil hoy?» (lo pone un script dentro de la página, sin esperar al JS); si no, «¿Se nota su propuesta de valor en su perfil hoy?».
+  - Campos, en este orden: red principal (tres botones), enlace o usuario del perfil (el ejemplo cambia con la red), correo, nombre (opcional) y consentimiento. Errores en lenguaje normal debajo de cada campo, sin borrar nada; sugerencia «¿Quiso decir…?» para errores típicos en gmail, hotmail, etc.; campo trampa `web` para robots.
+  - Guarda en `/api/charla-diagnostico` (`php/charla-diagnostico.php`) y avisa al equipo por email. El id se genera al cargar el formulario y se guarda en `autoria_diagnostico_envio`: un doble toque, una recarga o un reintento con los mismos datos no duplican nada; si cambian los datos, es un envío nuevo. La fecha va en ISO con la zona horaria del móvil.
+  - Tras enviar: «Recibido.», «Mañana le llega a {correo}…» y la comunidad «Firma lo que sabes Autoría» con el botón «Unirme a la comunidad».
   - Sin conexión: «Casi listo» y cola en `autoria_diagnostico_cola`; «Listo» y el recuadro «Último paso» con el botón de la comunidad de WhatsApp solo cuando el envío llega. Unirse **no es obligatorio** (decisión del 03/11/2026: se envía primero el correo y la comunidad es el último paso destacado). Los clics en el botón se cuentan por charla.
 - **Medición de las charlas:** `/api/visita` (`php/visita.php`) cuenta una visita por móvil, página y código, sin cookies ni IP, en `autoria-privado/visitas.json`. El panel (`/panel?vista=charlas`) muestra visitas, propuestas y diagnósticos pedidos por código, y el CSV de las solicitudes.
 - **`main.js`** — efectos y comportamiento de la portada:
@@ -71,6 +75,12 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Configuración:** `/instalar` se usa una sola vez y pide la clave de Gemini, la contraseña del panel y el email de avisos.
   - Se guarda en `autoria-privado/config.php`, **fuera de `public_html`**. La carpeta queda bloqueada con `.htaccess`.
   - Después la página se bloquea. Para cambiar algo, se borra ese `config.php` desde el Administrador de archivos y se vuelve a `/instalar`.
+- **Hoja de Google «CRM de las charlas · Firma lo que sabes»** (ID `1U1Dycgr0LLazyUOL4rmJFOmOl63aOvL1m97R84B1PIk`, pestañas Leads, Propuestas y Contadores): cada envío de las charlas se copia también ahí desde el servidor, con su Apps Script publicado como aplicación web.
+  - La URL (`…/exec`) y el token van en `config.php` (`hoja_url` y `hoja_token`) y se guardan desde `/panel?vista=hoja`, que además los prueba sin escribir nada (manda el tipo «prueba» y el script contesta «tipo» si el token es bueno).
+  - POST en JSON con cURL que sigue el 302 de Apps Script, 6 s como mucho y siempre después de contestar al móvil (`json_out_y_seguir`). Formatos: `diagnostico`, `propuesta` y `contadores`, los que acepta el script.
+  - Si falla, el envío queda en `autoria-privado/hoja-pendientes.json` y se reintenta con el siguiente envío que sí llegue (hasta 20, uno solo a la vez). En `/panel?vista=hoja` se ven y se reenvían a mano; el script descarta los id repetidos.
+  - Contadores (visitas a la dinámica, al diagnóstico y pulsaciones en la comunidad): con cada envío y cada pulsación, como mucho una vez por minuto por charla y solo si han cambiado (`hoja-contadores.json`). «Reenviar pendientes» los pone al día: pulsarlo al acabar cada charla.
+  - `guardar_config()` invalida OPcache; sin eso, otras peticiones siguen viendo unos segundos la configuración anterior.
 - **Contactos y diagnósticos:** van a `autoria-privado/contactos.jsonl`.
   - Se ven en `/panel`, con contraseña, y se descargan como CSV para Excel (punto y coma y BOM UTF-8).
   - Los avisos por email van a la dirección de `/instalar`. Se envían por el SMTP de Gmail con una contraseña de aplicación que se guarda desde `/panel?vista=avisos` (`smtp_user` y `smtp_pass` en `config.php`). Sin ella se usa `mail()`, pero el dominio temporal tiene SPF `-all` y Gmail descarta esos correos.
@@ -122,6 +132,8 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - `/instalar` muestra «La web ya está configurada».
 
 ## Pendiente
+
+- **Hoja de Google:** la versión publicada del Apps Script no tiene el código (responde «Script function not found: doPost»). Hay que volver a implementarla (Implementar → Gestionar implementaciones → editar → Nueva versión; la URL no cambia) y guardar la URL y el token en `/panel?vista=hoja`. Después, probar con `?c=TEST` y borrar las filas de prueba de la hoja.
 
 - **Equipo:** faltan fotos, cargos y bios. Hay huecos en `index.html`, sección 7, para Carlos, Mario, Adrián y José.
 - **Caso real:** falta el vídeo del cliente, con su permiso, y sus datos. Hay huecos en la sección 6.

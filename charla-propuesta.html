@@ -8,9 +8,9 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#F5F2EB">
   <link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=20261109a">
   <link rel="preload" href="/assets/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/styles.css?v=20261103b">
 </head>
 <body class="page-charla">
   <header class="ch-top">
@@ -21,26 +21,30 @@
     <!-- ============ 1. ESCRIBIR ============ -->
     <section class="ch-step" data-paso="escribir" aria-labelledby="ch-titulo">
       <h1 class="ch-title" id="ch-titulo">Su propuesta de <em><span class="mark">valor<svg class="anno anno-underline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path pathLength="1" vector-effect="non-scaling-stroke" d="M2 50 C 20 25, 41 70, 61 45 S 89 35, 98 50"/><path pathLength="1" vector-effect="non-scaling-stroke" d="M12 85 C 36 62, 66 80, 92 70"/></svg></span></em>.</h1>
+      <p class="ch-lede">Complete la frase. No tiene que quedar perfecta.</p>
 
-      <form class="ch-form" data-form novalidate>
-        <div class="field">
+      <form class="ch-form ch-frase-form" data-form novalidate>
+        <div class="field ch-linea">
           <label for="ch-para">Para</label>
           <input id="ch-para" name="para" type="text" maxlength="90" placeholder="dueños de pymes" autocomplete="off" autocapitalize="none" enterkeyhint="next" required>
         </div>
-        <div class="field">
-          <label for="ch-aporto">Aporto</label>
+        <div class="field ch-linea">
+          <label for="ch-aporto">aporto</label>
           <input id="ch-aporto" name="aporto" type="text" maxlength="90" placeholder="números que se entienden sin ser contador" autocomplete="off" autocapitalize="none" enterkeyhint="next" required>
         </div>
-        <div class="field">
-          <label for="ch-gracias">Gracias a</label>
+        <div class="field ch-linea">
+          <label for="ch-gracias">gracias a</label>
           <input id="ch-gracias" name="gracias_a" type="text" maxlength="90" placeholder="15 años asesorando empresas familiares" autocomplete="off" autocapitalize="none" enterkeyhint="done" required>
         </div>
 
-        <p class="ch-preview" data-preview aria-hidden="true"></p>
-        <p class="ch-note">No tiene que quedar perfecta.</p>
-        <p class="ch-error" data-error role="alert" hidden></p>
+        <div class="ch-ejemplo">
+          <p class="kicker">Ejemplo</p>
+          <p class="ch-ejemplo-frase">Para dueños de pymes, aporto números que se entienden sin ser contador, gracias a 15 años asesorando empresas familiares.</p>
+        </div>
 
+        <p class="ch-error" data-error role="alert" hidden></p>
         <button class="btn btn-primary btn-lg ch-btn" type="submit">Listo</button>
+        <p class="ch-tranquilidad">Es anónima: no le pedimos ni nombre ni correo.</p>
       </form>
     </section>
 
@@ -48,16 +52,21 @@
     <section class="ch-step" data-paso="leer" aria-labelledby="ch-leer" hidden>
       <p class="kicker ch-kicker" id="ch-leer">Léasela a quien tenga al lado</p>
       <p class="ch-frase" data-frase tabindex="-1"></p>
-      <div class="ch-actions">
-        <button class="btn btn-ghost btn-lg ch-btn" type="button" data-copiar>Copiar</button>
-        <button class="ch-edit" type="button" data-editar>Cambiar la frase</button>
+      <div class="ch-mini">
+        <button class="ch-edit" type="button" data-editar>Editar la frase</button>
+        <button class="ch-edit" type="button" data-copiar>Copiar</button>
       </div>
       <p class="ch-status" data-estado role="status" aria-live="polite"></p>
+
+      <div class="ch-siguiente">
+        <p class="ch-siguiente-texto">Cuando acaben en parejas: ¿se nota esta frase en su perfil <em>hoy</em>?</p>
+        <a class="btn btn-primary btn-lg ch-btn" data-ir-diagnostico href="/charla/diagnostico">Pedir mi diagnóstico gratis</a>
+      </div>
     </section>
 
     <noscript><p class="ch-note">Para usar esta página necesita activar JavaScript en su navegador.</p></noscript>
   </main>
 
-  <script src="/lib/charla.js?v=20261103b" defer></script>
+  <script src="/lib/charla.js?v=20261109a" defer></script>
 </body>
 </html>
