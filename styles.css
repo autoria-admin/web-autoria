@@ -1307,5 +1307,6 @@ body::before {
 [data-paso="final"] .ch-edit[hidden] { display: none; }
 .ch-ultimo { margin-top: .4rem; padding: 1.4rem 1.2rem 1.2rem; border: 1px solid var(--ink); border-radius: var(--radius); background: rgba(255,255,255,.5); }
 .ch-ultimo[hidden] { display: none; }
+.ch-ultimo + .ch-ultimo { margin-top: 1rem; }
 .ch-ultimo-texto { margin-bottom: 1.2rem; font-family: var(--serif); font-size: clamp(1.25rem, 1.1rem + .9vw, 1.55rem); line-height: 1.32; }
 .ch-btn-wa { min-height: 64px; padding-inline: 1rem; font-size: 1.05rem; white-space: normal; text-align: center; }
