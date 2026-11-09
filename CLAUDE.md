@@ -61,9 +61,9 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Páginas legales:** `privacidad.html`, `aviso-legal.html` y `creditos.html`.
 - **`php/`** — la parte de servidor en Hostinger:
   - `_comun.php`: utilidades, Gemini, límites de uso y guardado;
-  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `charla-diagnostico.php`, `visita.php`, `panel.php` e `instalar.php`.
+  - `asistente.php`, `lector-perfil.php`, `diagnostico.php`, `contacto.php`, `propuesta.php`, `charla-diagnostico.php`, `visita.php`, `charla.php`, `panel.php` e `instalar.php`.
 - **`.htaccess`:**
-  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta|charla-diagnostico|visita)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/(propuesta|diagnostico)` en `charla-*.html`;
+  - convierte `/api/(asistente|lector-perfil|diagnostico|contacto|propuesta|charla-diagnostico|visita)`, `/panel` y `/instalar` en los archivos `php/*.php`, y `/charla/(propuesta|diagnostico)` en `php/charla.php`, que sirve `charla-*.html` con `styles.css` dentro de la página (una petición menos: con «3G», el formulario aparece unos 5 s antes);
   - bloquea `php/`, `api/`, `tools/`, `.git`, los archivos que empiezan por punto, `*.md` y los `*.json` de configuración.
 - **`api/_conocimiento.js`, `api/_diagnostico.js` y `api/_lector-perfil.js`** — **fuente única** de las indicaciones de la IA. PHP las lee con `texto_js()`, que busca `` const NOMBRE = `…`; `` o `` export default `…`; ``. Por eso esos textos no pueden llevar comillas invertidas dentro.
   - Si cambian los campos del diagnóstico o del lector, hay que tocar **a la vez** `api/_*.js`, `php/*.php` y `lib/diagnostico.js`.
@@ -78,7 +78,8 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Configuración:** `/instalar` se usa una sola vez y pide la clave de Gemini, la contraseña del panel y el email de avisos.
   - Se guarda en `autoria-privado/config.php`, **fuera de `public_html`**. La carpeta queda bloqueada con `.htaccess`.
   - Después la página se bloquea. Para cambiar algo, se borra ese `config.php` desde el Administrador de archivos y se vuelve a `/instalar`.
-- **Hoja de Google «CRM de las charlas · Firma lo que sabes»** (ID `1U1Dycgr0LLazyUOL4rmJFOmOl63aOvL1m97R84B1PIk`, pestañas Leads, Propuestas y Contadores): cada envío de las charlas se copia también ahí desde el servidor, con su Apps Script publicado como aplicación web.
+- **Hoja de Google «CRM de las charlas · Firma lo que sabes»** (ID `1k-7WB9EwgCDpRDYbo6MWDUoBy8-VdHDAX0XbdMQHsTM`, de la cuenta admin.autoria@gmail.com; pestañas Leads, Propuestas y Contadores): cada envío de las charlas se copia también ahí desde el servidor, con su Apps Script publicado como aplicación web. La plantilla original, de una cuenta personal, se llama «… descartado» y no se usa.
+  - Si se cambia el código del script, hay que publicar una versión nueva: Implementar → Gestionar implementaciones → editar → Nueva versión (la URL no cambia).
   - La URL (`…/exec`) y el token van en `config.php` (`hoja_url` y `hoja_token`) y se guardan desde `/panel?vista=hoja`, que además los prueba sin escribir nada (manda el tipo «prueba» y el script contesta «tipo» si el token es bueno).
   - POST en JSON con cURL que sigue el 302 de Apps Script, 6 s como mucho y siempre después de contestar al móvil (`json_out_y_seguir`). Formatos: `diagnostico`, `propuesta` y `contadores`, los que acepta el script.
   - Si falla, el envío queda en `autoria-privado/hoja-pendientes.json` y se reintenta con el siguiente envío que sí llegue (hasta 20, uno solo a la vez). En `/panel?vista=hoja` se ven y se reenvían a mano; el script descarta los id repetidos.
@@ -136,8 +137,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 
 ## Pendiente
 
-- **Hoja de Google:** la versión publicada del Apps Script no tiene el código (responde «Script function not found: doPost»). Hay que volver a implementarla (Implementar → Gestionar implementaciones → editar → Nueva versión; la URL no cambia) y guardar la URL y el token en `/panel?vista=hoja`. Después, probar con `?c=TEST` y borrar las filas de prueba de la hoja.
-
+- **Hoja de Google:** borrar las filas de prueba (charla TEST y la fila EJEMPLO) antes de la charla del 12/11.
 - **Equipo:** faltan fotos, cargos y bios. Hay huecos en `index.html`, sección 7, para Carlos, Mario, Adrián y José.
 - **Caso real:** falta el vídeo del cliente, con su permiso, y sus datos. Hay huecos en la sección 6.
 - **eryoncompany.com caduca hacia el 19 de noviembre de 2026.** Hay que renovarlo si se va a usar para un subdominio.

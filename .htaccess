@@ -22,7 +22,8 @@ DirectoryIndex index.html
   RewriteRule ^api/(asistente|lector-perfil|diagnostico|contacto|propuesta|charla-diagnostico|visita)/?$ php/$1.php [L,QSA]
 
   # Dinámica de las charlas (no sale en el menú y lleva noindex)
-  RewriteRule ^charla/(propuesta|diagnostico)/?$ charla-$1.html [L,QSA]
+  # (se sirven con php/charla.php, que mete los estilos dentro de la página para que carguen antes)
+  RewriteRule ^charla/(propuesta|diagnostico)/?$ php/charla.php?p=$1 [L,QSA]
   RewriteRule ^panel/?$ php/panel.php [L,QSA]
   RewriteRule ^instalar/?$ php/instalar.php [L,QSA]
 
