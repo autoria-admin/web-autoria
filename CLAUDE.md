@@ -21,6 +21,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
   - La redirección de http a https se activa con «Forzar HTTPS» en hPanel, no en `.htaccess`: detrás de la CDN de Hostinger se podría crear un bucle.
   - El dominio temporal anterior, `silver-alligator-184608.hostingersite.com`, ya no abre la web.
 - **Publicación automática.** Cada `git push` a `main` del repositorio **público** `github.com/autoria-admin/web-autoria` (antes `caarloossc/web-autoria`, que redirige) se despliega solo en `public_html`, mediante la aplicación de GitHub de Hostinger. Tarda unos 10–20 s.
+  - **Comprobar que se ha aplicado:** la versión `?v=` de `styles.css` en `privacidad.html` publicada tiene que ser la del repositorio. El 09/11/2026 el cambio #10 no llegó: Hostinger siguió con el commit anterior incluso al pulsar «Implementar» en hPanel → GIT. Un commit nuevo en `main` vuelve a mandar el aviso.
 - **En hPanel:** Sitios web → Administrar sitio web → Avanzado → GIT / Configuración de PHP (8.3).
 - **No tocar la web de la empresa** (`eryoncompany.eryoncompany.com`, WordPress) ni su `public_html`.
 - **Vercel ya no existe.** Se borró en octubre de 2026. Los archivos `api/*.js`, `vercel.json` y `tools/dev-server.mjs` se conservan porque PHP lee de `api/` los textos de la IA (ver más abajo).
@@ -160,6 +161,7 @@ Hasta el 22/10/2026 el enfoque era solo LinkedIn; ahora es redes sociales en gen
 - **Caso real (oculto):** falta el vídeo del cliente, con su permiso, y sus datos. Hay huecos en la sección `#caso`.
 - **SEO fuera del código:** dar de alta `autoriaestudio.com` en Google Search Console (verificación por DNS en Hostinger) y en Bing Webmaster Tools, enviar el `sitemap.xml` y poner la web en la página de empresa de LinkedIn.
 - **eryoncompany.com caduca hacia el 19 de noviembre de 2026.** Hay que renovarlo si se va a usar para un subdominio.
+- **Correos con Gmail:** el 09/11/2026 la contraseña de aplicación de Gmail no estaba puesta (los avisos llegaban desde no-reply@autoriaestudio.com). Conviene ponerla en `/panel?vista=avisos` para que las confirmaciones de las charlas salgan desde admin.autoria@gmail.com.
 - **El panel tiene un registro de prueba** («PRUEBA (borrar) Lucía Ejemplo») que se puede borrar de `contactos.jsonl`.
 
 ## Forma de trabajar
