@@ -1322,23 +1322,30 @@ body::before {
 .btn.ch-btn-wa:hover, .btn.ch-btn-wa:focus-visible { color: var(--ink); border-color: #1DA851; }
 .ch-wa-logo { flex: none; width: 28px; height: 28px; fill: currentColor; }
 
-/* final: la agenda, destacada */
-.ch-agenda {
-  margin-top: .2rem; padding: 1.6rem 1.25rem 1.3rem;
-  border-radius: var(--radius); box-shadow: var(--shadow-2);
+/* paso obligatorio para confirmar: reservar la llamada de 30 minutos (12/11/2026) */
+.ch-llamada {
+  display: grid; gap: .85rem; margin-top: .3rem; padding: 1.5rem 1.2rem 1.25rem;
+  border-radius: var(--radius); box-shadow: var(--shadow-2); transition: box-shadow .3s;
 }
-.ch-agenda[hidden] { display: none; }
-.page-charla .ch-agenda .kicker { margin-bottom: .75rem; color: var(--accent); }
-.ch-agenda-titulo {
-  margin-bottom: .8rem; font-family: var(--serif); font-weight: 360; font-optical-sizing: auto;
-  font-size: clamp(2rem, 1.6rem + 2vw, 2.6rem); line-height: 1.04; letter-spacing: -0.022em;
+.page-charla .ch-llamada .kicker { color: var(--accent); }
+.ch-llamada-titulo {
+  font-family: var(--serif); font-weight: 360; font-optical-sizing: auto;
+  font-size: clamp(1.9rem, 1.55rem + 1.8vw, 2.4rem); line-height: 1.05; letter-spacing: -0.02em;
 }
-.ch-agenda-titulo em { font-weight: 300; color: var(--accent); }
-.ch-agenda-texto { margin-bottom: 1.35rem; font-size: 1.06rem; line-height: 1.5; color: var(--on-ink-mute); }
-.ch-btn-agenda { min-height: 66px; font-size: 1.14rem; white-space: normal; animation: chLlamar 1.8s var(--ease-out) .9s 3; }
-.ch-agenda-nota { margin-top: .85rem; font-size: .88rem; line-height: 1.45; color: var(--on-ink-mute); text-align: center; }
+.ch-llamada-titulo em { font-weight: 300; color: var(--accent); }
+.ch-llamada-texto { font-size: 1.02rem; line-height: 1.5; color: var(--on-ink-mute); }
+.ch-btn-agenda { min-height: 66px; font-size: 1.14rem; white-space: normal; }
+.ch-llamada.is-visible .ch-btn-agenda { animation: chLlamar 1.8s var(--ease-out) .3s 3; }
+.page-charla .ch-llamada .consent { margin-top: .2rem; font-size: 1.02rem; font-weight: 600; color: var(--on-ink); }
+.ch-llamada .ch-field-error { color: var(--accent); }
+.ch-llamada.is-invalid { box-shadow: var(--shadow-2), 0 0 0 2px var(--accent); }
 @keyframes chLlamar {
   from { box-shadow: 0 0 0 0 rgba(233, 68, 31, .65); }
   to   { box-shadow: 0 0 0 18px rgba(233, 68, 31, 0); }
 }
-@media (prefers-reduced-motion: reduce) { .ch-btn-agenda { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ch-llamada.is-visible .ch-btn-agenda { animation: none; } }
+/* el botón de confirmar, apagado hasta que se marca «Ya he reservado mi llamada» (sigue pudiéndose pulsar) */
+.btn.ch-btn[aria-disabled="true"],
+.btn.ch-btn[aria-disabled="true"]:hover,
+.btn.ch-btn[aria-disabled="true"]:focus-visible { background: transparent; color: var(--ink-mute); border-color: var(--line-2); }
+.btn.ch-btn[aria-disabled="true"]::before { display: none; }
